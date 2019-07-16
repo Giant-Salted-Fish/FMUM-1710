@@ -101,10 +101,6 @@ public class ItemVehicle extends ItemMapBase implements IPaintableItem
 	@Override
     public void addInformation(ItemStack stack, EntityPlayer player, List lines, boolean advancedTooltips)
 	{
-		String paintName = type.getPaintjob(stack.getItemDamage()).displayName;		
-		if(!paintName.equals("default") && !paintName.isEmpty())
-			lines.add("\u00a7b\u00a7o" + paintName);
-
 		if(!type.packName.isEmpty())
 		{
 			lines.add("\u00a7o" + type.packName);

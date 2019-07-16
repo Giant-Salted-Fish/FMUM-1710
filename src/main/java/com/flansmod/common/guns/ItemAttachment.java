@@ -66,10 +66,6 @@ public class ItemAttachment extends Item implements IPaintableItem
 	@Override
 	public void addInformation(ItemStack stack, EntityPlayer player, List lines, boolean b)
 	{
-		String paintName = type.getPaintjob(stack.getItemDamage()).displayName;		
-		if(!paintName.equals("default") && !paintName.isEmpty())
-			lines.add("\u00a7b\u00a7o" + paintName);
-
 		if(!type.packName.isEmpty())
 		{
 			lines.add(type.packName);

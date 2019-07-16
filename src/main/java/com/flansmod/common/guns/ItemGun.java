@@ -208,9 +208,6 @@ public class ItemGun extends Item implements IPaintableItem
     public void addInformation(ItemStack stack, EntityPlayer player, List lines, boolean advancedTooltips)
 	{
 		KeyBinding shift = Minecraft.getMinecraft().gameSettings.keyBindSneak;
-		String paintName = type.getPaintjob(stack.getItemDamage()).displayName;		
-		if(!paintName.equals("default") && !paintName.isEmpty())
-			lines.add("\u00a7b\u00a7o" + paintName);
 
 		if(!type.packName.isEmpty())
 		{
@@ -268,8 +265,7 @@ public class ItemGun extends Item implements IPaintableItem
 			{
 				String line = attachment.name;
 				lines.add(line);
-				if(line != null)
-					empty = false;
+				empty = line != null;
 			}
 
 			if(empty)
