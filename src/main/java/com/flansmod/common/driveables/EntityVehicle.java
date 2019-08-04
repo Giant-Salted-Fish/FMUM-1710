@@ -665,6 +665,11 @@ public class EntityVehicle extends EntityDriveable implements IExplodeable
 						wheel.motionZ *= 0.9F;
 					}
 				}
+
+				//Rate of fuel consumption may need fixing here.
+				if(!canThrustCreatively)
+					data.fuelInTank -= data.engine.fuelConsumption * throttle * 0.1F;
+
 			}
 			
 			wheel.moveEntity(wheel.motionX, wheel.motionY, wheel.motionZ);
