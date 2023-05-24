@@ -2,10 +2,8 @@ package com.flansmod.client;
 
 import com.flansmod.common.FlansMod;
 
-import cpw.mods.fml.client.FMLClientHandler;
 import net.minecraft.client.particle.EntityExplodeFX;
 import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.World;
 
 public class EntityBigSmoke extends EntityExplodeFX

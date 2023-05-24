@@ -1,0 +1,11 @@
+// Naming
+Name LMT Stock
+ShortName LMTStock
+Category ARStock
+
+// Visual
+Icon HK416D10RS
+Model oc.ModelOCGun:LMTStock skins/HK416D10RS.png 0.1
+
+// Attributes
+AttachableSlots -33.5 C[ LMTStockButtPad ]

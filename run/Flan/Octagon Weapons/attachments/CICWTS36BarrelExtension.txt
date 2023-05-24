@@ -1,0 +1,11 @@
+// Naming
+Name CIC WTS-36 Barrel Extension
+ShortName CICWTS36BarrelExtension
+Category CICWTS36BarrelExtension
+
+// Visual
+Icon HK416D10RS
+Model oc.ModelOCGun:CICWTS36BarrelExtension skins/CICWTS36C.png 0.1
+
+// Attributes
+AttachableSlots 1 C[ CICWTS36Barrel ]

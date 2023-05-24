@@ -1,32 +1,14 @@
 package com.flansmod.common.driveables;
 
-import io.netty.buffer.ByteBuf;
-
 import java.util.List;
-
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityLiving;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.EntityBodyHelper;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.client.model.ModelBase;
-import net.minecraft.item.ItemLead;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.AxisAlignedBB;
-import net.minecraft.util.DamageSource;
-import net.minecraft.util.MovingObjectPosition;
-import net.minecraft.util.Vec3;
-import net.minecraft.world.World;
 
 import com.flansmod.api.IControllable;
 import com.flansmod.client.FlansModClient;
 import com.flansmod.common.FlansMod;
 import com.flansmod.common.RotatedAxes;
-import com.flansmod.common.guns.EnumFireMode;
 import com.flansmod.common.guns.GunType;
+import com.flansmod.common.guns.GunType.FireMode;
 import com.flansmod.common.guns.ItemShootable;
-import com.flansmod.common.guns.ShootableType;
 import com.flansmod.common.network.PacketDriveableKey;
 import com.flansmod.common.network.PacketDriveableKeyHeld;
 import com.flansmod.common.network.PacketPlaySound;
@@ -39,6 +21,19 @@ import com.flansmod.common.vector.Vector3f;
 import cpw.mods.fml.common.registry.IEntityAdditionalSpawnData;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
+import io.netty.buffer.ByteBuf;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityLiving;
+import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemLead;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.util.DamageSource;
+import net.minecraft.util.MovingObjectPosition;
+import net.minecraft.util.Vec3;
+import net.minecraft.world.World;
 
 public class EntitySeat extends Entity implements IControllable, IEntityAdditionalSpawnData
 {
@@ -250,10 +245,8 @@ public class EntitySeat extends Entity implements IControllable, IEntityAddition
 				//worldObj.spawnParticle("reddust", 			posX + zAxis.x * i * 0.3D + yOffset.x, posY + zAxis.y * i * 0.3D + yOffset.y, posZ + zAxis.z * i * 0.3D + yOffset.z, 0, 0, 0);
 			}
 
-			if(lastRiddenByEntity instanceof EntityPlayer && riddenByEntity==null && FlansModClient.proxy.isThePlayer((EntityPlayer)lastRiddenByEntity))
-			{
+			if(lastRiddenByEntity instanceof EntityPlayer && riddenByEntity == null && FlansMod.proxy.isThePlayer((EntityPlayer)lastRiddenByEntity))
 				FlansMod.getPacketHandler().sendToServer(new PacketSeatCheck(this));
-			}
 		}
 
 
@@ -675,53 +668,49 @@ public class EntitySeat extends Entity implements IControllable, IEntityAddition
 	
 			minigunSpeed += 0.1F;
 	
-			if(gun != null && gun.mode != EnumFireMode.MINIGUN || minigunSpeed > 2F)
+			if(gun != null && gun.fireMode[0] != FireMode.MINIGUN || minigunSpeed > 2F)
 			{
 				if(gunDelay <= 0 && TeamsManager.bulletsEnabled && driveable.getDriveableData().ammo.length > 0)
 				{
 	
 					ItemStack bulletItemStack = driveable.getDriveableData().ammo[seatInfo.gunnerID];
 					//Check that neither is null and that the bullet item is actually a bullet
-					if(gun != null && bulletItemStack != null && bulletItemStack.getItem() instanceof ItemShootable)
+					if(gun != null && gun.isValidAmmo(bulletItemStack))
 					{
-						ShootableType bullet = ((ItemShootable)bulletItemStack.getItem()).type;
-						if(gun.isAmmo(bullet))
+						//Gun origin
+						Vector3f gunOrigin = Vector3f.add(driveable.axes.findLocalVectorGlobally(seatInfo.gunOrigin), new Vector3f(driveable.posX, driveable.posY, driveable.posZ), null);
+						//Calculate the look axes globally
+						RotatedAxes globalLookAxes = driveable.axes.findLocalAxesGlobally(looking);
+						Vector3f shootVec = driveable.axes.findLocalVectorGlobally(looking.getXAxis());
+						//Calculate the origin of the bullets
+						Vector3f yOffset = driveable.axes.findLocalVectorGlobally(new Vector3f(0F, (float)player.getMountedYOffset(), 0F));
+						//Spawn a new bullet item
+						worldObj.spawnEntityInWorld(((ItemShootable)bulletItemStack.getItem()).getEntity(worldObj, Vector3f.add(yOffset, new Vector3f(gunOrigin.x, gunOrigin.y, gunOrigin.z), null), shootVec, (EntityLivingBase)riddenByEntity, gun.bulletSpread, gun.damage, gun.bulletSpeed, bulletItemStack.getItemDamage(), driveable.getDriveableType()));
+						//Play the shoot sound
+						if(soundDelay <= 0)
 						{
-							//Gun origin
-							Vector3f gunOrigin = Vector3f.add(driveable.axes.findLocalVectorGlobally(seatInfo.gunOrigin), new Vector3f(driveable.posX, driveable.posY, driveable.posZ), null);
-							//Calculate the look axes globally
-							RotatedAxes globalLookAxes = driveable.axes.findLocalAxesGlobally(looking);
-							Vector3f shootVec = driveable.axes.findLocalVectorGlobally(looking.getXAxis());
-							//Calculate the origin of the bullets
-							Vector3f yOffset = driveable.axes.findLocalVectorGlobally(new Vector3f(0F, (float)player.getMountedYOffset(), 0F));
-							//Spawn a new bullet item
-							worldObj.spawnEntityInWorld(((ItemShootable)bulletItemStack.getItem()).getEntity(worldObj, Vector3f.add(yOffset, new Vector3f(gunOrigin.x, gunOrigin.y, gunOrigin.z), null), shootVec, (EntityLivingBase)riddenByEntity, gun.bulletSpread, gun.damage, gun.bulletSpeed, bulletItemStack.getItemDamage(), driveable.getDriveableType()));
-							//Play the shoot sound
-							if(soundDelay <= 0)
-							{
-								PacketPlaySound.sendSoundPacket(posX, posY, posZ, FlansMod.soundRange, dimension, gun.shootSound, false);
-								soundDelay = gun.shootSoundLength;
-							}
-							//Get the bullet item damage and increment it
-							int damage = bulletItemStack.getItemDamage();
-							if(!((EntityPlayer)riddenByEntity).capabilities.isCreativeMode)
-							bulletItemStack.setItemDamage(damage + 1);
-							//If the bullet item is completely damaged (empty)
-							if(damage >= bulletItemStack.getMaxDamage())
-							{
-								//Set the damage to 0 and consume one ammo item (unless in creative)
-								if(((EntityPlayer)riddenByEntity).capabilities.isCreativeMode)
-								{
-									bulletItemStack.setItemDamage(0);
-								}
-								else
-								{
-									driveable.getDriveableData().ammo[seatInfo.gunnerID] = null;
-								}
-							}
-							//Reset the shoot delay
-							gunDelay = gun.shootDelay;
+							PacketPlaySound.sendSoundPacket(posX, posY, posZ, FlansMod.soundRange, dimension, gun.shootSound[0], false);
+							soundDelay = gun.shootSoundLength;
 						}
+						//Get the bullet item damage and increment it
+						int damage = bulletItemStack.getItemDamage();
+						if(!((EntityPlayer)riddenByEntity).capabilities.isCreativeMode)
+						bulletItemStack.setItemDamage(damage + 1);
+						//If the bullet item is completely damaged (empty)
+						if(damage >= bulletItemStack.getMaxDamage())
+						{
+							//Set the damage to 0 and consume one ammo item (unless in creative)
+							if(((EntityPlayer)riddenByEntity).capabilities.isCreativeMode)
+							{
+								bulletItemStack.setItemDamage(0);
+							}
+							else
+							{
+								driveable.getDriveableData().ammo[seatInfo.gunnerID] = null;
+							}
+						}
+						//Reset the shoot delay
+						gunDelay = gun.shootDelay;
 					}
 				}
 			}

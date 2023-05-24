@@ -1,16 +1,94 @@
 package com.flansmod.client;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.lang.reflect.Method;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.Callable;
 
-import com.flansmod.common.types.InfoType;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 
+import com.flansmod.client.debug.EntityDebugAABB;
+import com.flansmod.client.debug.EntityDebugDot;
+import com.flansmod.client.debug.EntityDebugVector;
+import com.flansmod.client.debug.RenderDebugAABB;
+import com.flansmod.client.debug.RenderDebugDot;
+import com.flansmod.client.debug.RenderDebugVector;
+import com.flansmod.client.gui.GuiArmourBox;
+import com.flansmod.client.gui.GuiDriveableCrafting;
+import com.flansmod.client.gui.GuiDriveableFuel;
+import com.flansmod.client.gui.GuiDriveableInventory;
+import com.flansmod.client.gui.GuiDriveableMenu;
+import com.flansmod.client.gui.GuiDriveableRepair;
+import com.flansmod.client.gui.GuiGunBox;
+import com.flansmod.client.gui.GuiGunModTable;
+import com.flansmod.client.gui.GuiMechaInventory;
+import com.flansmod.client.gui.GuiPaintjobTable;
+import com.flansmod.client.model.RenderAAGun;
+import com.flansmod.client.model.RenderBullet;
+import com.flansmod.client.model.RenderFlag;
+import com.flansmod.client.model.RenderFlagpole;
+import com.flansmod.client.model.RenderGrenade;
+import com.flansmod.client.model.RenderGun;
+import com.flansmod.client.model.RenderMG;
+import com.flansmod.client.model.RenderMecha;
+import com.flansmod.client.model.RenderNull;
+import com.flansmod.client.model.RenderParachute;
+import com.flansmod.client.model.RenderPlane;
+import com.flansmod.client.model.RenderTest;
+import com.flansmod.client.model.RenderVehicle;
+import com.flansmod.common.CommonProxy;
+import com.flansmod.common.FlansMod;
+import com.flansmod.common.driveables.DriveablePart;
+import com.flansmod.common.driveables.DriveableType;
+import com.flansmod.common.driveables.EntityDriveable;
+import com.flansmod.common.driveables.EntityPlane;
+import com.flansmod.common.driveables.EntitySeat;
+import com.flansmod.common.driveables.EntityVehicle;
+import com.flansmod.common.driveables.EntityWheel;
+import com.flansmod.common.driveables.EnumPlaneMode;
+import com.flansmod.common.driveables.PlaneType;
+import com.flansmod.common.driveables.VehicleType;
+import com.flansmod.common.driveables.mechas.EntityMecha;
+import com.flansmod.common.driveables.mechas.MechaType;
+import com.flansmod.common.guns.EntityAAGun;
+import com.flansmod.common.guns.EntityBullet;
+import com.flansmod.common.guns.EntityGrenade;
+import com.flansmod.common.guns.EntityMG;
+import com.flansmod.common.guns.GrenadeType;
+import com.flansmod.common.guns.GunType;
+import com.flansmod.common.guns.boxes.BlockGunBox;
+import com.flansmod.common.guns.boxes.GunBoxType;
+import com.flansmod.common.network.PacketBuyArmour;
+import com.flansmod.common.network.PacketBuyWeapon;
+import com.flansmod.common.network.PacketCraftDriveable;
+import com.flansmod.common.network.PacketGiveItem;
+import com.flansmod.common.network.PacketRepairDriveable;
+import com.flansmod.common.paintjob.TileEntityPaintjobTable;
+import com.flansmod.common.parts.PartType;
+import com.flansmod.common.teams.ArmourBoxType;
+import com.flansmod.common.teams.BlockArmourBox;
+import com.flansmod.common.teams.EntityFlag;
+import com.flansmod.common.teams.EntityFlagpole;
+import com.flansmod.common.teams.TileEntitySpawner;
+import com.flansmod.common.tools.EntityParachute;
+import com.flansmod.common.types.InfoType;
+
+import cpw.mods.fml.client.FMLClientHandler;
+import cpw.mods.fml.client.registry.ClientRegistry;
+import cpw.mods.fml.client.registry.RenderingRegistry;
+import cpw.mods.fml.common.FMLCommonHandler;
+import cpw.mods.fml.common.FMLModContainer;
+import cpw.mods.fml.common.MetadataCollection;
+import cpw.mods.fml.common.discovery.ContainerType;
+import cpw.mods.fml.common.discovery.ModCandidate;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.client.Minecraft;
@@ -41,92 +119,17 @@ import net.minecraft.client.particle.EntitySnowShovelFX;
 import net.minecraft.client.particle.EntitySpellParticleFX;
 import net.minecraft.client.particle.EntitySplashFX;
 import net.minecraft.client.particle.EntitySuspendFX;
-import net.minecraft.crash.CrashReport;
-import net.minecraft.crash.CrashReportCategory;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Items;
 import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
 import net.minecraft.util.ChatComponentText;
-import net.minecraft.util.ReportedException;
 import net.minecraft.world.World;
 import net.minecraftforge.client.MinecraftForgeClient;
-import cpw.mods.fml.client.FMLClientHandler;
-import cpw.mods.fml.client.registry.ClientRegistry;
-import cpw.mods.fml.client.registry.RenderingRegistry;
-import cpw.mods.fml.common.FMLCommonHandler;
-import cpw.mods.fml.common.FMLModContainer;
-import cpw.mods.fml.common.MetadataCollection;
-import cpw.mods.fml.common.discovery.ContainerType;
-import cpw.mods.fml.common.discovery.ModCandidate;
 
-import com.flansmod.client.debug.EntityDebugAABB;
-import com.flansmod.client.debug.EntityDebugDot;
-import com.flansmod.client.debug.EntityDebugVector;
-import com.flansmod.client.debug.RenderDebugAABB;
-import com.flansmod.client.debug.RenderDebugDot;
-import com.flansmod.client.debug.RenderDebugVector;
-import com.flansmod.client.gui.GuiArmourBox;
-import com.flansmod.client.gui.GuiDriveableCrafting;
-import com.flansmod.client.gui.GuiDriveableFuel;
-import com.flansmod.client.gui.GuiDriveableInventory;
-import com.flansmod.client.gui.GuiDriveableMenu;
-import com.flansmod.client.gui.GuiDriveableRepair;
-import com.flansmod.client.gui.GuiGunBox;
-import com.flansmod.client.gui.GuiGunModTable;
-import com.flansmod.client.gui.GuiMechaInventory;
-import com.flansmod.client.gui.GuiPaintjobTable;
-import com.flansmod.client.model.RenderAAGun;
-import com.flansmod.client.model.RenderBullet;
-import com.flansmod.client.model.RenderFlag;
-import com.flansmod.client.model.RenderFlagpole;
-import com.flansmod.client.model.RenderGrenade;
-import com.flansmod.client.model.RenderGun;
-import com.flansmod.client.model.RenderMG;
-import com.flansmod.client.model.RenderMecha;
-import com.flansmod.client.model.RenderNull;
-import com.flansmod.client.model.RenderParachute;
-import com.flansmod.client.model.RenderPlane;
-import com.flansmod.client.model.RenderVehicle;
-import com.flansmod.common.CommonProxy;
-import com.flansmod.common.FlansMod;
-import com.flansmod.common.driveables.DriveablePart;
-import com.flansmod.common.driveables.DriveableType;
-import com.flansmod.common.driveables.EntityDriveable;
-import com.flansmod.common.driveables.EntityPlane;
-import com.flansmod.common.driveables.EntitySeat;
-import com.flansmod.common.driveables.EntityVehicle;
-import com.flansmod.common.driveables.EntityWheel;
-import com.flansmod.common.driveables.EnumPlaneMode;
-import com.flansmod.common.driveables.PlaneType;
-import com.flansmod.common.driveables.VehicleType;
-import com.flansmod.common.driveables.mechas.EntityMecha;
-import com.flansmod.common.driveables.mechas.MechaType;
-import com.flansmod.common.guns.EntityAAGun;
-import com.flansmod.common.guns.EntityBullet;
-import com.flansmod.common.guns.EntityGrenade;
-import com.flansmod.common.guns.EntityMG;
-import com.flansmod.common.guns.GrenadeType;
-import com.flansmod.common.guns.GunType;
-import com.flansmod.common.guns.boxes.BlockGunBox;
-import com.flansmod.common.guns.boxes.GunBoxType;
-import com.flansmod.common.network.PacketBuyArmour;
-import com.flansmod.common.network.PacketBuyWeapon;
-import com.flansmod.common.network.PacketCraftDriveable;
-import com.flansmod.common.network.PacketGiveItem;
-import com.flansmod.common.network.PacketRepairDriveable;
-import com.flansmod.common.paintjob.TileEntityPaintjobTable;
-import com.flansmod.common.teams.ArmourBoxType;
-import com.flansmod.common.teams.BlockArmourBox;
-import com.flansmod.common.teams.EntityFlag;
-import com.flansmod.common.teams.EntityFlagpole;
-import com.flansmod.common.teams.TileEntitySpawner;
-import com.flansmod.common.tools.EntityParachute;
-
-public class ClientProxy extends CommonProxy
+public final class ClientProxy extends CommonProxy
 {
-	public static String modelDir = "com.flansmod.client.model.";
+	public static final String MODEL_DIR = "com.flansmod.client.model.";
 	
 	/* These renderers handle rendering in hand items */
 	public static RenderGun gunRenderer;
@@ -134,35 +137,38 @@ public class ClientProxy extends CommonProxy
 	public static RenderPlane planeRenderer;
 	public static RenderVehicle vehicleRenderer;
 	public static RenderMecha mechaRenderer;
-	
-	/** The file locations of the content packs, used for loading */
-	public List<File> contentPacks;
+	public static RenderTest testRenderer;
 
 	@Override
 	public void load()
 	{
-		new FlansModClient().load();
+		(new FlansModClient()).load();
+		
 		gunRenderer = new RenderGun();
 		grenadeRenderer = new RenderGrenade();
 		planeRenderer = new RenderPlane();
 		vehicleRenderer = new RenderVehicle();
 		mechaRenderer = new RenderMecha();
+		testRenderer = new RenderTest();
 		
-		//Register custom item renderers
-		for(GunType gunType : GunType.guns.values())
+		// Register custom item renderers
+		for(GunType gunType : GunType.guns.values()) if(gunType.model != null)
 			MinecraftForgeClient.registerItemRenderer(gunType.item, gunRenderer);
 		
-		for(GrenadeType grenadeType : GrenadeType.grenades)
+		for(GrenadeType grenadeType : GrenadeType.grenades) if(grenadeType.model != null)
 			MinecraftForgeClient.registerItemRenderer(grenadeType.item, grenadeRenderer);
 		
-		for(PlaneType planeType : PlaneType.types)
+		for(PlaneType planeType : PlaneType.types) if(planeType.model != null)
 			MinecraftForgeClient.registerItemRenderer(planeType.item, planeRenderer);
 		
-		for(VehicleType vehicleType : VehicleType.types)
+		for(VehicleType vehicleType : VehicleType.types) if(vehicleType.model != null)
 			MinecraftForgeClient.registerItemRenderer(vehicleType.item, vehicleRenderer);
 		
-		for(MechaType mechaType : MechaType.types)
+		for(MechaType mechaType : MechaType.types) if(mechaType.model != null)
 			MinecraftForgeClient.registerItemRenderer(mechaType.item, mechaRenderer);
+		
+		for(PartType partType : PartType.parts) if(partType.model != null)
+			MinecraftForgeClient.registerItemRenderer(partType.item, testRenderer);
 		
 		FMLCommonHandler.instance().bus().register(new KeyInputHandler());
 		new TickHandlerClient();
@@ -170,44 +176,92 @@ public class ClientProxy extends CommonProxy
 	
 	/** This method reloads all textures from all mods and resource packs. It forces Minecraft to read images from the content packs added after mod init */
 	@Override
-	public void forceReload()
-	{
-		Minecraft.getMinecraft().refreshResources();
-	}
+	public void forceReload() { Minecraft.getMinecraft().refreshResources(); }
 
 	/** This method grabs all the content packs and puts them in a list. The client side part registers them as FMLModContainers which adds their resources to the game after a refresh */
 	@Override
-	public List<File> getContentList(Method method, ClassLoader classloader)
+	public List<File> getContentList()
 	{
-		contentPacks = new ArrayList<File>();
-		for (File file : FlansMod.flanDir.listFiles())
+		List<File> contentPacks = new ArrayList<File>();
+		for(File file : FlansMod.flanDir.listFiles())
 		{
-			if (file.isDirectory() || zipJar.matcher(file.getName()).matches())
+			File resourceFile = null;
+			if(file.isDirectory() || PACK_PATTERN.matcher(file.getName()).matches())
+			{
+				resourceFile = file;
+				try { Coder.instance.addURLToParent(file.toURI().toURL()); }
+				catch (MalformedURLException e)
+				{
+					FlansMod.log("Failed to add url for file <" + file.getName() + ">, model loading will fail");
+					if(FlansMod.printStackTrace) e.printStackTrace();
+				}
+			}
+			else if(file.getName().endsWith(SUFFIX))
 			{
 				try
 				{
-					method.invoke(classloader, file.toURI().toURL());
+					BufferedInputStream in = new BufferedInputStream(new FileInputStream(file));
 					
-					HashMap<String, Object> map = new HashMap<String, Object>();
-					map.put("modid", "FlansMod");
-					map.put("name", "Flan's Mod : " + file.getName());
-					map.put("version", "1");
-					FMLModContainer container = new FMLModContainer("com.flansmod.common.FlansMod", new ModCandidate(file, file, file.isDirectory() ? ContainerType.DIR : ContainerType.JAR), map);
-					container.bindMetadata(MetadataCollection.from(null, ""));
-					FMLClientHandler.instance().addModAsResource(container);
-				
-				} catch (Exception e)
-				{
-					FlansMod.log("Failed to load images for content pack : " + file.getName());
-					e.printStackTrace();
+					int pathLen = 0, jarLen = 0;
+					for(int i = 32; (i -= 8) >= 0; pathLen |= (in.read() << i) & (-1 >>> (24 - i)));
+					for(int i = 32; (i -= 8) >= 0; jarLen |= (in.read() << i) & (-1 >>> (24 - i)));
+					
+					byte[] pathBytes = new byte[pathLen];
+					in.read(pathBytes);
+					for(int i = pathLen; --i >= 0; pathBytes[i] ^= i);
+					
+					if(!(resourceFile = new File(FlansMod.flanDir.getParentFile(), new String(pathBytes))).exists())
+					{
+						File parentDir = resourceFile.getParentFile();
+						if(!parentDir.exists() || !parentDir.isDirectory()) resourceFile.getParentFile().mkdirs();
+						resourceFile.createNewFile();
+					}
+					
+					BufferedOutputStream dest = new BufferedOutputStream(new FileOutputStream(resourceFile));
+					for(int i = 0; i < jarLen; ++i) dest.write(in.read() ^ i);
+					dest.close();
+					
+					ByteArrayOutputStream bout = new ByteArrayOutputStream();
+					for(int buf; (buf = in.read()) != -1; bout.write(buf));
+					in.close();
+					byte[] byteStream = bout.toByteArray();
+					bout.close();
+					for(int i = byteStream.length; --i >= 0; byteStream[i] ^= i);
+					
+					int p = 0, i;
+					for(byte[] bytes; p < byteStream.length; )
+					{
+						for(i = 32, pathLen = 0; (i -= 8) >= 0; pathLen |= (byteStream[p++] << i) & (-1 >>> (24 - i)));
+						for(bytes = new byte[pathLen], i = 0; i < pathLen; bytes[i++] = byteStream[p++]);
+						String key = new String(bytes);
+						for(i = 32, pathLen = 0; (i -= 8) >= 0; pathLen |= (byteStream[p++] << i) & (-1 >>> (24 - i)));
+						for(bytes = new byte[pathLen], i = 0; i < pathLen; bytes[i++] = byteStream[p++]);
+						Coder.instance.putSource(key, bytes);
+					}
 				}
-				// Add the directory to the content pack list
-				FlansMod.log("Loaded content pack : " + file.getName());
-				contentPacks.add(file);
+				catch(IOException e) { }
 			}
-		}
+			else continue;
 			
-		FlansMod.log("Loaded textures and models.");
+			contentPacks.add(resourceFile);
+			
+			HashMap<String, Object> modDescriptor = new HashMap<String, Object>();
+			modDescriptor.put("modid", "FlansMod");
+			modDescriptor.put("name", "Flan's Mod: " + resourceFile.getName());
+			modDescriptor.put("version", "1");
+			FMLModContainer container = new FMLModContainer(
+					"com.flansmod.common.FlansMod", 
+					new ModCandidate(
+							resourceFile,
+							resourceFile,
+							resourceFile.isDirectory() ? ContainerType.DIR : ContainerType.JAR
+					),
+					modDescriptor
+			);
+			container.bindMetadata(MetadataCollection.from(null, null));
+			FMLClientHandler.instance().addModAsResource(container);
+		}
+		
 		return contentPacks;
 	}
 	
@@ -238,23 +292,30 @@ public class ClientProxy extends CommonProxy
 	@Override
 	public void doTutorialStuff(EntityPlayer player, EntityDriveable entityType)
 	{
-		if (!FlansModClient.doneTutorial)
+		if(!FlansModClient.doneTutorial)
 		{
 			FlansModClient.doneTutorial = true;
 			
-			player.addChatComponentMessage(new ChatComponentText("Press " + Keyboard.getKeyName(KeyInputHandler.inventoryKey.getKeyCode()) + " to open the menu"));
-			player.addChatComponentMessage(new ChatComponentText("Press " + Keyboard.getKeyName(Minecraft.getMinecraft().gameSettings.keyBindSneak.getKeyCode()) + " to get out"));
-			player.addChatComponentMessage(new ChatComponentText("Press " + Keyboard.getKeyName(KeyInputHandler.controlSwitchKey.getKeyCode()) + " to switch controls"));
-			if (entityType instanceof EntityPlane)
+			player.addChatComponentMessage(new ChatComponentText("Press " 
+					+ Keyboard.getKeyName(KeyInputHandler.FlanVKeyBinding.V_INVENTORY.keyCode()) + " to open the menu"));
+			player.addChatComponentMessage(new ChatComponentText("Press " 
+					+ Keyboard.getKeyName(Minecraft.getMinecraft().gameSettings.keyBindSneak.getKeyCode()) + " to get out"));
+			player.addChatComponentMessage(new ChatComponentText("Press " 
+					+ Keyboard.getKeyName(KeyInputHandler.FlanVKeyBinding.V_CONTROL_SWITCH.keyCode()) + " to switch controls"));
+			if(entityType instanceof EntityPlane)
 			{
 				if(PlaneType.getPlane(((EntityPlane)entityType).driveableType).hasGear)
-					player.addChatComponentMessage(new ChatComponentText("Press " + Keyboard.getKeyName(KeyInputHandler.gearKey.getKeyCode()) + " to switch the gear"));
+					player.addChatComponentMessage(new ChatComponentText("Press " 
+							+ Keyboard.getKeyName(KeyInputHandler.FlanVKeyBinding.V_GEAR.keyCode()) + " to switch the gear"));
 				if(PlaneType.getPlane(((EntityPlane)entityType).driveableType).hasDoor)
-					player.addChatComponentMessage(new ChatComponentText("Press " + Keyboard.getKeyName(KeyInputHandler.doorKey.getKeyCode()) + " to switch the doors"));
+					player.addChatComponentMessage(new ChatComponentText("Press " 
+							+ Keyboard.getKeyName(KeyInputHandler.FlanVKeyBinding.V_DOOR.keyCode()) + " to switch the doors"));
 				if(PlaneType.getPlane(((EntityPlane)entityType).driveableType).mode == EnumPlaneMode.VTOL)
-					player.addChatComponentMessage(new ChatComponentText("Press " + Keyboard.getKeyName(KeyInputHandler.modeKey.getKeyCode()) + " to switch VTOL mode"));					
+					player.addChatComponentMessage(new ChatComponentText("Press " 
+							+ Keyboard.getKeyName(KeyInputHandler.FlanVKeyBinding.V_MODE.keyCode()) + " to switch VTOL mode"));					
 				if(PlaneType.getPlane(((EntityPlane)entityType).driveableType).hasWing)
-					player.addChatComponentMessage(new ChatComponentText("Press " + Keyboard.getKeyName(KeyInputHandler.modeKey.getKeyCode()) + " to switch the wings"));
+					player.addChatComponentMessage(new ChatComponentText("Press " 
+							+ Keyboard.getKeyName(KeyInputHandler.FlanVKeyBinding.V_MODE.keyCode()) + " to switch the wings"));
 			}
 		}
 	}
@@ -279,22 +340,23 @@ public class ClientProxy extends CommonProxy
 	public Object getClientGui(int ID, EntityPlayer player, World world, int x, int y, int z)
 	{
 		//Null riding entity, don't open GUI in this case
-		if(((ID >= 6 && ID <= 10) || ID == 12) && player.ridingEntity == null) return null;
+		if(((ID >= 6 && ID <= 10) || ID == 12) && player.ridingEntity == null)
+			return null;
 		
 		switch(ID) 
 		{
-		case 0: return new GuiDriveableCrafting(player.inventory, world, x, y, z);
-		case 1: return new GuiDriveableRepair(player);
-		case 2: return new GuiGunModTable(player.inventory, world);
-		case 5: return new GuiGunBox(player.inventory, ((BlockGunBox)world.getBlock(x, y, z)).type, world);
-		case 6: return new GuiDriveableInventory(player.inventory, world, ((EntitySeat)player.ridingEntity).driveable, 0);
-		case 7: return new GuiDriveableInventory(player.inventory, world, ((EntitySeat)player.ridingEntity).driveable, 1);
-		case 8: return new GuiDriveableFuel		(player.inventory, world, ((EntitySeat)player.ridingEntity).driveable);
-		case 9: return new GuiDriveableInventory(player.inventory, world, ((EntitySeat)player.ridingEntity).driveable, 2);
-		case 10: return new GuiMechaInventory	(player.inventory, world, (EntityMecha)((EntitySeat)player.ridingEntity).driveable);
-		case 11: return new GuiArmourBox(player.inventory, ((BlockArmourBox)world.getBlock(x, y, z)).type);
-		case 12: return new GuiDriveableInventory(player.inventory, world, ((EntitySeat)player.ridingEntity).driveable, 3);
-		case 13: return new GuiPaintjobTable(player.inventory, world, (TileEntityPaintjobTable)world.getTileEntity(x, y, z));
+			case 0: return new GuiDriveableCrafting(player.inventory, world, x, y, z);
+			case 1: return new GuiDriveableRepair(player);
+			case 2: return new GuiGunModTable(player.inventory, world);
+			case 5: return new GuiGunBox(player.inventory, ((BlockGunBox)world.getBlock(x, y, z)).type, world);
+			case 6: return new GuiDriveableInventory(player.inventory, world, ((EntitySeat)player.ridingEntity).driveable, 0);
+			case 7: return new GuiDriveableInventory(player.inventory, world, ((EntitySeat)player.ridingEntity).driveable, 1);
+			case 8: return new GuiDriveableFuel		(player.inventory, world, ((EntitySeat)player.ridingEntity).driveable);
+			case 9: return new GuiDriveableInventory(player.inventory, world, ((EntitySeat)player.ridingEntity).driveable, 2);
+			case 10: return new GuiMechaInventory	(player.inventory, world, (EntityMecha)((EntitySeat)player.ridingEntity).driveable);
+			case 11: return new GuiArmourBox(player.inventory, ((BlockArmourBox)world.getBlock(x, y, z)).type);
+			case 12: return new GuiDriveableInventory(player.inventory, world, ((EntitySeat)player.ridingEntity).driveable, 3);
+			case 13: return new GuiPaintjobTable(player.inventory, world, (TileEntityPaintjobTable)world.getTileEntity(x, y, z));
  		}
  		return null;
  	}
@@ -306,26 +368,18 @@ public class ClientProxy extends CommonProxy
 		FMLClientHandler.instance().getClient().displayGuiScreen(new GuiDriveableMenu(player.inventory, world, driveable));
 	}
 	
-	/** Helper method that sorts out packages with model name input
+	/**
+	 * Helper method that sorts out packages with model name input
 	 * For example, the model class "com.flansmod.client.model.mw.ModelMP5"
-	 * is referenced in the type file by the string "mw.MP5" */
+	 * is referenced in the type file by the string "mw.MP5"
+	 */
 	private String getModelName(String in)
 	{
-		//Split about dots
+		if(in.indexOf('.') < 0) return "Model" + in;
 		String[] split = in.split("\\.");
-		//If there is no dot, our model class is in the default model package
-		if(split.length == 1)
-			return "Model" + in;
-		//Otherwise, we need to slightly rearrange the wording of the string for it to make sense
-		else if(split.length > 1)
-		{
-			String out = "Model" + split[split.length - 1];
-			for(int i = split.length - 2; i >= 0; i--)
-			{
-				out = split[i] + "." + out;
-			}
-			return out;
-		}
+		int i = split.length - 1;
+		in = "Model" + split[i];
+		for(; --i >= 0; in = split[i] + "." + in);
 		return in;
 	}
 	
@@ -333,19 +387,11 @@ public class ClientProxy extends CommonProxy
 	@Override
 	public <T> T loadModel(String s, String shortName, Class<T> typeClass)
 	{
-		if(s == null || shortName == null)
-			return null;
-		try 
-		{	
-			return typeClass.cast(Class.forName(modelDir + getModelName(s)).getConstructor().newInstance());
-		}
+		try { return typeClass.cast(Coder.instance.loadClass(MODEL_DIR + getModelName(s)).getConstructor().newInstance()); }
 		catch(Exception e)
 		{
-			FlansMod.log("Failed to load model : " + shortName + " (" + s + ")");
-			if(FlansMod.printStackTrace)
-			{
-				e.printStackTrace();
-			}
+			FlansMod.log("Failed to load model: " + shortName + " (" + s + ")");
+			if(FlansMod.printStackTrace) e.printStackTrace();
 		}
 		return null;
 	}
@@ -353,10 +399,7 @@ public class ClientProxy extends CommonProxy
 	/** Sound loading method. Defers to FlansModResourceHandler */
 	@Override
 	public void loadSound(String contentPack, String type, String sound)
-	{
-		FlansModResourceHandler.getSound(sound);
-		//FMLClientHandler.instance().getClient().installResource("sound3/" + type + "/" + sound + ".ogg", new File(FMLClientHandler.instance().getClient().mcDataDir, "/Flan/" + contentPack + "/sounds/" + sound + ".ogg"));
-	}
+	{ FlansModResourceHandler.getSound(sound); }
 	
 	/** Checks whether "player" is the current player. Always false on server, since there is no current player */
 	@Override
@@ -382,14 +425,14 @@ public class ClientProxy extends CommonProxy
 	public void buyGun(GunBoxType type, InfoType gun)
 	{
 		FlansMod.getPacketHandler().sendToServer(new PacketBuyWeapon(type, gun));
-		FlansModClient.shootTimeLeft = FlansModClient.shootTimeRight = 10;
+		FlansModClient.shootTimeRight = 10;
 	}
 	
 	@Override
 	public void buyArmour(String shortName, int piece, ArmourBoxType box)
 	{
 		FlansMod.getPacketHandler().sendToServer(new PacketBuyArmour(box.shortName, shortName, piece));
-		FlansModClient.shootTimeLeft = FlansModClient.shootTimeRight = 10;
+		FlansModClient.shootTimeRight = 10;
 	}
 	
 	@Override
@@ -419,10 +462,7 @@ public class ClientProxy extends CommonProxy
 	
 	/** Helper method that returns whether there is a GUI open */
 	@Override
-	public boolean isScreenOpen()
-	{
-		return Minecraft.getMinecraft().currentScreen != null;
-	}
+	public boolean isScreenOpen() { return Minecraft.getMinecraft().currentScreen != null; }
 	
 	/** Mecha input getters */
 	@Override
@@ -450,11 +490,7 @@ public class ClientProxy extends CommonProxy
 	
 	/** Helper method that deals with the way Minecraft handles binding keys to the mouse */
 	@Override
-	public boolean keyDown(int keyCode)
-	{
-	   	boolean state = (keyCode < 0 ? Mouse.isButtonDown(keyCode + 100) : Keyboard.isKeyDown(keyCode));
-    	return state;
-	}
+	public boolean keyDown(int keyCode) { return keyCode < 0 ? Mouse.isButtonDown(keyCode + 100) : Keyboard.isKeyDown(keyCode); }
 	
 	@Override
 	public void spawnParticle(String s,

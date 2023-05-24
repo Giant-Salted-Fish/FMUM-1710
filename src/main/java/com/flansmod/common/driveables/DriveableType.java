@@ -4,37 +4,32 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import org.apache.commons.lang3.StringUtils;
+import com.flansmod.client.model.ModelDriveable;
+import com.flansmod.common.FlansMod;
+import com.flansmod.common.driveables.collisions.CollisionShapeBox;
+import com.flansmod.common.guns.BulletType;
+import com.flansmod.common.guns.GunType.FireMode;
+import com.flansmod.common.paintjob.PaintableType;
+import com.flansmod.common.parts.PartType;
+import com.flansmod.common.types.TypeFile;
+import com.flansmod.common.vector.Vector3f;
 
+import cpw.mods.fml.common.FMLCommonHandler;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.block.material.Material;
 import net.minecraft.client.model.ModelBase;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemDye;
 import net.minecraft.item.ItemStack;
 
-import com.flansmod.client.model.AnimTankTrack;
-import com.flansmod.client.model.ModelDriveable;
-import com.flansmod.common.FlansMod;
-import com.flansmod.common.guns.BulletType;
-import com.flansmod.common.guns.EnumFireMode;
-import com.flansmod.common.guns.GunType;
-import com.flansmod.common.paintjob.PaintableType;
-import com.flansmod.common.parts.PartType;
-import com.flansmod.common.types.InfoType;
-import com.flansmod.common.types.TypeFile;
-import com.flansmod.common.vector.Vector3f;
-import com.flansmod.common.driveables.ShootPoint;
-import com.flansmod.common.driveables.collisions.CollisionShapeBox;
-
-import cpw.mods.fml.common.FMLCommonHandler;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
-
 public class DriveableType extends PaintableType
 {
-	@SideOnly(value = Side.CLIENT)
 	/** The plane model */
-	public ModelDriveable model;
+	@SideOnly(Side.CLIENT)
+	public ModelDriveable model = null;
+	@SideOnly(Side.CLIENT)
+	public String modelName = null;
 
 	//Health and recipe
 	/** Health of each driveable part */
@@ -70,7 +65,7 @@ public class DriveableType extends PaintableType
 	/** Delays. Can override gun delays */
 	public int shootDelayPrimary = 1, shootDelaySecondary = 1;
 	/** Firing modes for primary and secondary guns. Minigun also an option */
-	public EnumFireMode modePrimary = EnumFireMode.FULLAUTO, modeSecondary = EnumFireMode.FULLAUTO;
+	public byte modePrimary = FireMode.FULL_AUTO, modeSecondary = FireMode.FULL_AUTO;
 	/** Sounds */
 	public String shootSoundPrimary, shootSoundSecondary, shootReloadSound;
 	/** Positions of primary and secondary weapons */
@@ -313,7 +308,7 @@ public class DriveableType extends PaintableType
 			     vehicleGunModelScale = Float.parseFloat(split[1]);
 			
 			if(FMLCommonHandler.instance().getSide().isClient() && split[0].equals("Model"))
-				model = FlansMod.proxy.loadModel(split[1], shortName, ModelDriveable.class);
+				model = FlansMod.proxy.loadModel(modelName = split[1], shortName, ModelDriveable.class);
 		    else if(split[0].equals("VehicleGunReloadTick"))
                 reloadSoundTick = Integer.parseInt(split[1]);
 			else if(split[0].equals("Texture"))
@@ -519,9 +514,9 @@ public class DriveableType extends PaintableType
 			else if(split[0].equals("AlternateSecondary"))
 				alternateSecondary = Boolean.parseBoolean(split[1]);
 			else if(split[0].equals("ModePrimary"))
-				modePrimary = EnumFireMode.valueOf(split[1].toUpperCase());
+				modePrimary = FireMode.parseFireMode(split[1]);
 			else if(split[0].equals("ModeSecondary"))
-				modeSecondary = EnumFireMode.valueOf(split[1].toUpperCase());
+				modeSecondary = FireMode.parseFireMode(split[1]);
 			else if(split[0].equals("BulletSpeed"))
 				bulletSpeed = Float.parseFloat(split[1]);
 			else if(split[0].equals("BulletSpread"))
@@ -1105,10 +1100,7 @@ public class DriveableType extends PaintableType
 	}
 	
 	@Override
-	public float GetRecommendedScale()
-	{
-		return 100.0f / cameraDistance;
-	}
+	public float GetRecommendedScale() { return 100.0f / cameraDistance; }
 	
 	public class ParticleEmitter
 	{
@@ -1136,8 +1128,5 @@ public class DriveableType extends PaintableType
 
 	@Override
 	@SideOnly(Side.CLIENT)
-	public ModelBase GetModel() 
-	{
-		return model;
-	}
+	public ModelBase GetModel() { return model; }
 }

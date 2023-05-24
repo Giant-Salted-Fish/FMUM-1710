@@ -1,0 +1,11 @@
+// Naming
+Name CIC WTS-36 Gas Block
+ShortName CICWTS36GasBlock
+Category CICWTS36GasBlock
+
+// Visual
+Icon CICWTS36C
+Model oc.ModelOCGun:CICWTS36GasBlock skins/CICWTS36C.png 0.1
+
+// Attributes
+AttachableSlots 14 4 C[ HK416FrontSight ] | 0 5.5 C[ CICWTS36Piston ]

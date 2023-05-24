@@ -2,11 +2,6 @@ package com.flansmod.client.model.animation;
 
 import java.util.ArrayList;
 
-import com.flansmod.client.model.animation.AnimationPart;
-import com.flansmod.common.vector.Vector3f;
-
-import net.minecraft.item.ItemStack;
-
 public class AnimationPose {
 	
 	ArrayList<PoseComponent> parts = new ArrayList<PoseComponent>();;

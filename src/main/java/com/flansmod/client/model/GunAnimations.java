@@ -1,27 +1,31 @@
 package com.flansmod.client.model;
 
-import java.util.Random;
-
 import com.flansmod.client.FlansModClient;
-import com.flansmod.common.vector.Vector3f;
+import com.flansmod.common.FlansMod;
+//added something here
+import com.flansmod.common.guns.GunType;
+import com.flansmod.common.guns.GunType.GunTag;
+
+import net.minecraft.item.ItemStack;
+//to separate it from the original codes
 
 public class GunAnimations 
 {
-	public static GunAnimations defaults = new GunAnimations();
+	public static final GunAnimations defaults = new GunAnimations();
 	
-    
-	/** (Purely aesthetic) gun animation variables */
-	public boolean isGunEmpty;
 	/** Recoil */
-	public float gunRecoil = 0F, lastGunRecoil = 0F, recoilAmount = 0.33F;
+	public float gunRecoilRotZ = 0F, lastGunRecoilRotZ = 0F, gunRecoilRotY = 0F, lastGunRecoilRotY = 0F, gunRecoilRotX = 0F, lastGunRecoilRotX = 0F;
+	public float gunRecoilTransX = 0F, lastGunRecoilTransX = 0F, gunRecoilTransZ = 0F, lastGunRecoilTransZ = 0F, gunRecoilTransY = 0F, lastGunRecoilTransY = 0F;
+	public float antiRecoilRotZConst = 0F, antiRecoilRotYConst = 0F, antiRecoilRotXConst = 0F, antiRecoilTransXConst = 0F, antiRecoilTransZConst = 0F, antiRecoilTransYConst = 0F;
+	public float gunRecoilRotShakeX = 0F, gunRecoilRotShakeY = 0F, gunRecoilRotShakeZ = 0F, gunRecoilTransShakeX = 0F, gunRecoilTransShakeY = 0F, gunRecoilTransShakeZ = 0F, 
+				 antiRecoilShakeConst = 0F;
+	public float chargeProgress = 0F, lastChargeProgress = 0F;
+	public int chargeStage = 0, checkChamberStage = 0;
+	//to separate from
 	/** Slide */
-	public float gunSlide = 0F, lastGunSlide = 0F;
-	/** Delayed Reload Animations */
-	public int timeUntilPump = 0, timeToPumpFor = 0;
-	/** Delayed Reload Animations : -1, 1 = At rest, 0 = Mid Animation */
-	public float pumped = -1F, lastPumped = -1F;
-	/** Delayed Reload Animations : Doing the delayed animation */
-	public boolean pumping = false;
+	public float gunSlide = 0F, lastGunSlide = 0F, slideVelocity = 0F;
+	private float[] slideAcceleration = { 0F, 0F };
+	public int preLockSlideTime = 0;
 	/** Charge handle variables */
 	public int timeUntilCharge = 0, timeToChargeFor = 0;
 	public float charged = -1F, lastCharged = -1F;
@@ -34,55 +38,19 @@ public class GunAnimations
 
 	public float minigunBarrelRotation = 0F;
 	public float minigunBarrelRotationSpeed = 0F;
-	
-	public int muzzleFlashTime = 0;
-	public int flashInt = 0;
-
-	/** Casing mechanics */
-	public int timeUntilCasing = 0;
-	public int casingStage = 0;
-	public int lastCasingStage = 0;
-
-	/** Hammer model mechanics */
-	/** If in single action, the model will play a modified animation and delay hammer reset */
-	public float hammerRotation = 0F;
-	public float althammerRotation = 0F;
-	public int timeUntilPullback = 0;
-	public float gunPullback = -1F, lastGunPullback = -1F;
-	public boolean isFired = false;
-    
-    public Vector3f casingRandom = new Vector3f(0F, 0F, 0F);
+	/** muzzle flash duration, flash texture enabled and flash model rotate angle along x-axis */
+	public float flashAlpha = 0F, lastFlashAlpha = 0F, muzzleFlashVanishConst = 0F;
+	public int flashNum = 0;
+	public float flashRotate = 0;
     
 	/** Melee animations */
 	public int meleeAnimationProgress = 0, meleeAnimationLength = 0;
 	
-	public GunAnimations()
-	{
-		
-	}
+	public GunAnimations() { }
 	
 	public void update()
 	{
-		//Assign values
-		lastPumped = pumped;
 		lastCharged = charged;
-		lastGunPullback = gunPullback;
-		lastCasingStage = casingStage;
-
-		//Time until pump-action
-		if(timeUntilPump > 0)
-		{
-			timeUntilPump--;
-			if(timeUntilPump == 0)
-			{
-				//Pump it!
-				pumping = true;	
-				lastPumped = pumped = -1F;
-				FlansModClient.shotState = 1;
-			}
-			
-		}
-
 		//Timer until pulling back the charge handle/bolt
 		if(timeUntilCharge > 0)
 		{
@@ -95,85 +63,78 @@ public class GunAnimations
 			}
 			
 		}
-
-		//Time until hammer pullback
-		if(timeUntilPullback > 0)
+		
+		lastFlashAlpha = flashAlpha;
+		flashAlpha *= muzzleFlashVanishConst;
+		
+		//update model recoil
+		gunRecoilRotZ = (lastGunRecoilRotZ = gunRecoilRotZ) * antiRecoilRotZConst;
+		gunRecoilRotY = (lastGunRecoilRotY = gunRecoilRotY) * antiRecoilRotYConst;
+		gunRecoilRotX = (lastGunRecoilRotX = gunRecoilRotX) * antiRecoilRotXConst;
+		
+		gunRecoilTransX = (lastGunRecoilTransX = gunRecoilTransX) * antiRecoilTransXConst;
+		gunRecoilTransZ = (lastGunRecoilTransZ = gunRecoilTransZ) * antiRecoilTransZConst;
+		gunRecoilTransY = (lastGunRecoilTransY = gunRecoilTransY) * antiRecoilTransYConst;
+		
+		gunRecoilRotShakeX *= antiRecoilShakeConst;
+		gunRecoilRotShakeY *= antiRecoilShakeConst;
+		gunRecoilRotShakeZ *= antiRecoilShakeConst;
+		gunRecoilTransShakeX *= antiRecoilShakeConst;
+		gunRecoilTransShakeY *= antiRecoilShakeConst;
+		gunRecoilTransShakeZ *= antiRecoilShakeConst;
+		
+		//gun charge for third person
+		lastChargeProgress = chargeProgress;
+		if(chargeStage != 0)
 		{
-			timeUntilPullback--;
-			if(timeUntilPullback == 0)
+			chargeProgress += chargeStage * 2F / timeToChargeFor;
+			
+			if(chargeStage == 1)
 			{
-				//Reset the hammer
-				isFired = true;
-				lastGunPullback = gunPullback = -1F;
+				if(chargeProgress >= 1F)
+				{
+					chargeProgress = 1F;
+					chargeStage = -1;
+				}
+			}
+			else if(chargeProgress <= 0F) //chargeStage == -1
+			{
+				chargeProgress = 0F;
+				chargeStage = 0;
 			}
 		}
-		else
+		else if(checkChamberStage != 0)
 		{
-			//Automatically reset hammer
-			hammerRotation *= 0.6F;
-			althammerRotation *= 0.6F;
+			chargeProgress += checkChamberStage * 2F / timeToChargeFor;
+			
+			if(checkChamberStage == 1)
+			{
+				if(chargeProgress >= 1F)
+				{
+					chargeProgress = 1F;
+					checkChamberStage = -1;
+				}
+			}
+			else if(chargeProgress <= 0F) //chargeStage == -1
+			{
+				chargeProgress = 0F;
+				checkChamberStage = 0;
+			}
 		}
-
-		//Time until bullet casing ejection
-		if(timeUntilCasing > 0)
-		{
-			timeUntilCasing--;
-			if(timeUntilCasing == 0)
-				casingStage++;
-		}
-		else
-		{
-			casingStage++;
-		}
-
-		if(muzzleFlashTime > 0)
-			muzzleFlashTime--;
 		
-		if(pumping)
+		//Gun slide
+		if(gunSlide > 0F || lastGunSlide > 0F)
 		{
-			pumped += 2F / timeToPumpFor;
-			if(pumped >= 0.999F)
-				pumping = false;
+			slideVelocity += slideAcceleration[0] + slideAcceleration[1] * gunSlide;
+			if((gunSlide = (lastGunSlide = gunSlide) - slideVelocity) < 0F) gunSlide = 0F;
 		}
-		if(charging)
-		{
-			charged += 2F / timeToChargeFor;
-			if(charged >= 0.999F)
-				charging = false;
-		}
-
-		if(isFired)
-		{
-			gunPullback += 2F / 4;
-			if(gunPullback >= 0.999F)
-				isFired = false;
-		}
-
-		//Recoil model
-		lastGunRecoil = gunRecoil;
-		if(gunRecoil > 0)
-			gunRecoil *= 0.7F;
-
-		//Slide model
-		lastGunSlide = gunSlide;
-		if(isGunEmpty)
-			lastGunSlide = gunSlide = 0.5F;
-		if(!isGunEmpty && gunSlide > 0.9)	//Add one extra frame to slide
-			gunSlide -= 0.1F;
-		else if(gunSlide > 0 && !isGunEmpty)
-			gunSlide *= 0.5F;
-
-		//Reload
-		lastReloadAnimationProgress = reloadAnimationProgress;
-		if(reloading)
-			reloadAnimationProgress += 1F / reloadAnimationTime;
-		if(reloading && reloadAnimationProgress >= 0.9F)	//reset if slide locked
-			isGunEmpty = false;
-		if(reloading && reloadAnimationProgress >= 1F)
-			reloading = false;
 		
+		if(preLockSlideTime > 0) --preLockSlideTime;
+		else if(preLockSlideTime < 0) ++preLockSlideTime;
+		
+		/** disabled temply
 		minigunBarrelRotation += minigunBarrelRotationSpeed;
-		minigunBarrelRotationSpeed *= 0.9F;
+		minigunBarrelRotationSpeed *= 0.9F;*/
 		
 		if(meleeAnimationLength > 0)
 		{
@@ -183,63 +144,104 @@ public class GunAnimations
 				meleeAnimationProgress = meleeAnimationLength = 0;
 		}
 	}
-
-	//Not to be used for mechas
-	public void onGunEmpty(boolean atLastBullet)
+	
+	public float doSlideRelease(float gs, float[] sa)
 	{
-		isGunEmpty = atLastBullet;
+		slideVelocity = 0F;
+		slideAcceleration = sa;
+		return lastGunSlide = gunSlide = gs;
 	}
 	
-	public void doShoot(int pumpDelay, int pumpTime, int hammerDelay, float hammerAngle, float althammerAngle, int casingDelay)
+	public void doCharge(int ct)
 	{
-		Random r = new Random();
-
-		//Accumulative recoil function
-		lastGunRecoil = gunRecoil += recoilAmount;
-
-		minigunBarrelRotationSpeed += 2F;
-		lastGunSlide = gunSlide = 1F;
-		timeUntilPump = pumpDelay;
-		timeToPumpFor = pumpTime;
-		timeUntilPullback = hammerDelay;
-		timeUntilCasing = casingDelay;
-		hammerRotation = hammerAngle;
-		althammerRotation = althammerAngle;
-		muzzleFlashTime = 2;
-
-		int Low = -1;
-		int High = 3;
-		int result = r.nextInt(High-Low) + Low;
-		if(result == -1) result = 0;
-		if(result == 3) result = 2;
-        flashInt = result;
-        
-        casingRandom.x = ((r.nextFloat()*2)-1);
-        casingRandom.y = ((r.nextFloat()*2)-1);
-        casingRandom.z = ((r.nextFloat()*2)-1);
-		casingStage = 0;
+		timeToChargeFor = ct;
+		chargeStage = 1;
+	}
+	
+	public void checkChamber(int cct)
+	{
+		timeToChargeFor = cct;
+		checkChamberStage = 1;
+	}
+	
+	/** this method is use by PacketPlayerShoot to render the animation of other player's shoot */
+	public void doShoot(boolean pls, float[] sa, float fvc, int fn, float fr)
+	{
+		if(pls) preLockSlideTime = FlansMod.preLockSlideTime;
 		
-		if(pumpDelay == 0)
+		gunSlide = 1F;
+		slideAcceleration = sa;
+		if((muzzleFlashVanishConst = fvc) > 0F)
 		{
-			FlansModClient.shotState = 1;
+			flashAlpha = 1F;
+			flashNum = fn;
+			flashRotate = fr;
 		}
 	}
-		
-	public void doReload(int reloadTime, int pumpDelay, int pumpTime, int chargeDelay, int chargeTime, int ammoCount)
+	
+	public void doShoot(GunType type, ItemStack stack, boolean pls, float fvc, int fn, float fr)
 	{
-		reloading = true;
-		lastReloadAnimationProgress = reloadAnimationProgress = 0F;
-		reloadAnimationTime = reloadTime;
-		timeUntilPump = pumpDelay;
-		timeToPumpFor = pumpTime;
-		timeUntilCharge = chargeDelay;
-		timeToChargeFor = chargeTime;
-		reloadAmmoCount = ammoCount;
-		FlansModClient.lastBulletReload = ammoCount - 1;
+		//if we are asked to do pre lock slide
+		if(pls) preLockSlideTime = FlansMod.preLockSlideTime;
+		
+		//create gun case and gun smoke
+		if(FlansModClient.gunCaseList[FlansModClient.currentCaseIndex].caseType != null)
+			RenderGun.createCaseForGun = true;
+		RenderGun.createSmokeForGun = true;
+		
+		//Accumulative recoil function
+		int[] states = GunType.getStates(stack);
+		gunRecoilRotZ += FlansModClient.staticRecoilPitch * GunType.getState(states, GunTag.RECOIL_ROT_Z);
+		gunRecoilRotY += FlansModClient.staticRecoilYaw * GunType.getState(states, GunTag.RECOIL_ROT_Y);
+		gunRecoilRotX += FlansModClient.staticRecoilYaw * type.recoilRotXConst;
+		gunRecoilTransX += FlansModClient.staticRecoilPitch * GunType.getState(states, GunTag.RECOIL_TRANS_X_BY_PITCH)
+						   + (float)Math.abs(FlansModClient.staticRecoilYaw) * GunType.getState(states, GunTag.RECOIL_TRANS_X_BY_YAW);
+		gunRecoilTransZ += FlansModClient.staticRecoilYaw * type.recoilTransZConst;
+		gunRecoilTransY += FlansModClient.staticRecoilPitch * type.recoilTransYConst;
+		antiRecoilRotZConst = type.getAntiModelRecoilConstant(stack);
+		antiRecoilRotYConst = type.getAntiModelRecoilYawConstant(stack);
+		antiRecoilRotXConst = type.antiRecoilRotXConst;
+		antiRecoilTransXConst = type.getAntiModelRecoilDistanceConstant(stack);
+		antiRecoilTransZConst = type.antiRecoilTransZConst;
+		antiRecoilTransYConst = type.antiRecoilTransYConst;
+		
+		setGunShake(type.model);
+		//to separate it from the original codes
+		
+		minigunBarrelRotationSpeed += 2F;
+		gunSlide = 1F;
+		slideVelocity = 0F;
+		slideAcceleration = type.slideAcceleration;
+		
+		if((muzzleFlashVanishConst = fvc) > 0F)
+		{
+			flashAlpha = 1F;
+			flashNum = fn;
+			flashRotate = fr;
+		}
 	}
 	
-	public void doMelee(int meleeTime)
+	private void setGunShake(ModelGun model)
 	{
-		meleeAnimationLength = meleeTime;
+		if(FlansModClient.crouching)
+		{
+			gunRecoilRotShakeX = model.recoilShakeRotX * FlansMod.decreaseRecoilShake;
+			gunRecoilRotShakeY = model.recoilShakeRotY * FlansMod.decreaseRecoilShake;
+			gunRecoilRotShakeZ = model.recoilShakeRotZ * FlansMod.decreaseRecoilShake;
+			gunRecoilTransShakeX = model.recoilShakeTransX * FlansMod.decreaseRecoilShake;
+			gunRecoilTransShakeY = model.recoilShakeTransY * FlansMod.decreaseRecoilShake;
+			gunRecoilTransShakeZ = model.recoilShakeTransZ * FlansMod.decreaseRecoilShake;
+			antiRecoilShakeConst = model.antiRecoilShakeConst * FlansMod.decreaseRecoilShake;
+			return;
+		}
+		gunRecoilRotShakeX = model.recoilShakeRotX;
+		gunRecoilRotShakeY = model.recoilShakeRotY;
+		gunRecoilRotShakeZ = model.recoilShakeRotZ;
+		gunRecoilTransShakeX = model.recoilShakeTransX;
+		gunRecoilTransShakeY = model.recoilShakeTransY;
+		gunRecoilTransShakeZ = model.recoilShakeTransZ;
+		antiRecoilShakeConst = model.antiRecoilShakeConst;
 	}
+	
+	public void doMelee(int meleeTime) { meleeAnimationLength = meleeTime; }
 }

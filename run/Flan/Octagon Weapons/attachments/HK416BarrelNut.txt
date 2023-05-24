@@ -1,0 +1,11 @@
+// Naming
+Name H&K416 Barrel Nut
+ShortName HK416BarrelNut
+Category HK416BarrelNut
+
+// Visual
+Icon HK416D10RS
+Model oc.ModelOCGun:HK416BarrelNut skins/HK416D10RS.png 0.1
+
+// Attributes
+AttachableSlots C[ HK416Handguard ]

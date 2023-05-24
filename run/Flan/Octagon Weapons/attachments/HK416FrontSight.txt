@@ -1,0 +1,10 @@
+// Naming
+Name H&K416 Front Sight
+ShortName HK416FrontSight
+Category HK416FrontSight
+
+// Visual
+Icon HK416D10RS
+Model oc.ModelOCGun:HK416FrontSight skins/IronSights.png 0.1
+
+// Attributes

@@ -1,9 +1,9 @@
 package com.flansmod.client.model;
 
-import net.minecraft.client.model.ModelBase;
-
 import com.flansmod.client.tmt.ModelRendererTurbo;
 import com.flansmod.common.guns.EntityMG;
+
+import net.minecraft.client.model.ModelBase;
 
 public class ModelMG extends ModelBase
 {

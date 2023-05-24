@@ -1,0 +1,10 @@
+// Naming
+Name CIC IS-4 Front Sight
+ShortName CICIS4FrontSight
+Category PRA
+
+// Visual
+Icon HK416D10RS
+Model oc.ModelOCGun:CICIS4FrontSight skins/IronSights.png 0.1
+
+// Attributes

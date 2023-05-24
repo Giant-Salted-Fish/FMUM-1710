@@ -1,0 +1,11 @@
+// Naming
+Name CIC WTS-36 Pistol Grip
+ShortName CICWTS36PistolGrip
+Category CICWTS36PistolGrip
+
+// Visual
+Icon CICWTS36C
+Model oc.ModelOCGun:CICWTS36PistolGrip skins/CICWTS36C.png 0.1
+
+// Attributes
+RightHandPriority 0

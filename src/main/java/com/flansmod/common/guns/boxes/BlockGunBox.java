@@ -2,7 +2,14 @@ package com.flansmod.common.guns.boxes;
 
 import java.util.ArrayList;
 
+import com.flansmod.common.FlansMod;
+import com.flansmod.common.guns.GunType;
 import com.flansmod.common.types.InfoType;
+
+import cpw.mods.fml.common.FMLCommonHandler;
+import cpw.mods.fml.common.registry.GameRegistry;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.client.renderer.texture.IIconRegister;
@@ -11,18 +18,8 @@ import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-import net.minecraft.util.ChatComponentText;
-import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.IIcon;
 import net.minecraft.world.World;
-import cpw.mods.fml.common.FMLCommonHandler;
-import cpw.mods.fml.common.registry.GameRegistry;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
-
-import com.flansmod.common.FlansMod;
-import com.flansmod.common.guns.GunType;
 
 public class BlockGunBox extends Block
 {
@@ -70,8 +67,9 @@ public class BlockGunBox extends Block
 					canBuy = false;
 			}
 
-			if (canBuy)
+			if(canBuy)
 			{
+				//marked here to remove something from the inventory of the player
 				for (ItemStack remove : entry.requiredParts)
 				{
 					int amountLeft = remove.stackSize;
@@ -88,18 +86,14 @@ public class BlockGunBox extends Block
 				{
 					GunType gunType = (GunType)entry.type;
 					NBTTagCompound tags = new NBTTagCompound();
-					tags.setString("Paint", gunType.defaultPaintjob.iconName);
 					//Add ammo tags
-					NBTTagList ammoTagsList = new NBTTagList();
-					for(int j = 0; j < gunType.numPrimaryAmmoItems; j++)
-						ammoTagsList.appendTag(new NBTTagCompound());
-
-					tags.setTag("ammo", ammoTagsList);
+					int[] ammoArray = new int[gunType.ammoCapacity];
+					for(int i = ammoArray.length; --i >= 0; ) ammoArray[i] = -1;
+					tags.setIntArray(GunType.GunTag.AMMO, ammoArray);
 					gunStack.stackTagCompound = tags;
 				}
-
 				// Drop gun on floor
-				if (!inventory.addItemStackToInventory(gunStack))
+				if(!inventory.addItemStackToInventory(gunStack))
 					inventory.player.dropPlayerItemWithRandomChoice(gunStack, false);
 			}
  			else
@@ -161,7 +155,7 @@ public class BlockGunBox extends Block
 		if(entityplayer.isSneaking())
 			return false;
 		entityplayer.openGui(FlansMod.INSTANCE, 5, world, i, j, k);
-		//entityplayer.addChatComponentMessage(new ChatComponentText(EnumChatFormatting.BLUE + "CFR " + EnumChatFormatting.WHITE + "♦ Flans crafting is disabled."));
+		//entityplayer.addChatComponentMessage(new ChatComponentText(EnumChatFormatting.BLUE + "CFR " + EnumChatFormatting.WHITE + "Flans crafting is disabled."));
 		return true;
 	}
 	

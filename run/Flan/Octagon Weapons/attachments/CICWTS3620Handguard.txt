@@ -1,0 +1,12 @@
+// Naming
+Name CIC WTS-36 20" Handguard
+ShortName CICWTS3620Handguard
+Category CICWTS36Handguard
+
+// Visual
+Icon CICWTS36C
+Model oc.ModelOCGun:CICWTS3620Handguard skins/CICWTS36C.png 0.1
+
+// Attributes
+LeftHandPriority 0
+AttachableSlots 2 -9 0 180 4 20 C[ PRA ] | 65 9 0 0 4 4 C[ PRA ] | 4 0 -9 -90 4 19 C[ PRA ] | 4 0 9 90 4 19 C[ PRA ]

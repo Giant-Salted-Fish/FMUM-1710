@@ -37,7 +37,10 @@ public abstract class ItemShootable extends Item
 			int itemDamage, InfoType shotFrom);
 
 	//Can be overriden to allow new types of bullets to be created, Handheld constructor
-	public abstract EntityShootable getEntity(World worldObj, EntityLivingBase player,
-			float bulletSpread, float damage, float bulletSpeed, boolean b,
-			int itemDamage, InfoType shotFrom);
+	public abstract EntityShootable getEntity(World worldObj, EntityLivingBase player, 
+			float bulletSpread, float damage, float bulletSpeed, int itemDamage, InfoType shotFrom);
+	
+	//request to spawn bullet at required coor with required rotate
+	public abstract EntityShootable getEntity(World worldObj, EntityLivingBase player, float bulletSpread, float damage,
+			float bulletSpeed, InfoType shotFrom, float x, float y, float z, float roty, float rotz);
 }

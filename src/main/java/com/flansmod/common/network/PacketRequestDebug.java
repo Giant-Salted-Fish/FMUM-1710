@@ -22,6 +22,7 @@ public class PacketRequestDebug extends PacketBase
 	public PacketRequestDebug()
 	{
 	}
+	
 	public PacketRequestDebug(boolean debug)
 	{
 		this.debug = debug;
@@ -30,7 +31,7 @@ public class PacketRequestDebug extends PacketBase
 	@Override
 	public void encodeInto(ChannelHandlerContext ctx, ByteBuf data) 
 	{
-		data.writeByte(this.debug? 1: 0);
+		data.writeByte(this.debug? 1 : 0);
 	}
 
 	@Override

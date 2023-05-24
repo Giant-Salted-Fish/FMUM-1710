@@ -7,12 +7,11 @@ import com.flansmod.common.FlansMod;
 import com.flansmod.common.driveables.DriveablePosition;
 import com.flansmod.common.driveables.DriveableType;
 import com.flansmod.common.driveables.EnumDriveablePart;
-import com.flansmod.common.driveables.PilotGun;
-import com.flansmod.common.driveables.DriveableType.ParticleEmitter;
-import com.flansmod.common.guns.BulletType;
-import com.flansmod.common.guns.EnumFireMode;
 import com.flansmod.common.types.TypeFile;
 import com.flansmod.common.vector.Vector3f;
+
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 
 public class MechaType extends DriveableType 
 {
@@ -192,16 +191,14 @@ public class MechaType extends DriveableType
 			else if(split[0].equals("LegAnimSpeed"))
 				legAnimSpeed = Float.parseFloat(split[1]);
 		}
-		catch (Exception ignored)
-		{
-		}
+		catch(Exception ignored) { }
     }
     
 	/** To be overriden by subtypes for model reloading */
+    @Override
+    @SideOnly(Side.CLIENT)
 	public void reloadModel()
-	{
-		model = FlansMod.proxy.loadModel(modelString, shortName, ModelMecha.class);
-	}
+	{ if(model != null) model = FlansMod.proxy.loadModel(modelName, shortName, ModelMecha.class); }
     
     private DriveablePosition getShootPoint(String[] split)
     {

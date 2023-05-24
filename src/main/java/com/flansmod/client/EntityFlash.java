@@ -2,8 +2,6 @@ package com.flansmod.client;
 
 import org.lwjgl.opengl.GL11;
 
-import com.flansmod.common.FlansMod;
-
 import cpw.mods.fml.client.FMLClientHandler;
 import net.minecraft.client.particle.EntityFX;
 import net.minecraft.client.renderer.Tessellator;

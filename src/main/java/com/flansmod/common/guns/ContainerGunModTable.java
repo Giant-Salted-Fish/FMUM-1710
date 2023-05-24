@@ -1,10 +1,7 @@
 package com.flansmod.common.guns;
 
-import com.flansmod.common.paintjob.Paintjob;
-
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
-import net.minecraft.init.Items;
 import net.minecraft.inventory.Container;
 import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
@@ -27,16 +24,16 @@ public class ContainerGunModTable extends Container
 		addSlotToContainer(gunSlot);
 		
 		//Attachment Slots
-		for(int k = 0; k < 8; k++)
+		/*for(int k = 0; k < 8; k++)
 		{
 			addSlotToContainer(new SlotGun(inventory, k + 1, 17 + (k * 18), 89, gunSlot));
-		}
+		}*/
 
 		//Generic Attachment Slots
-		for(int col = 0; col < 8; col++)
+		/*for(int col = 0; col < 8; col++)
 		{
 			addSlotToContainer(new SlotGun(inventory, 9 + col, 17 + (col * 18), 115 + (col * 18), gunSlot));
-		}
+		}*/
 
 		//Main inventory slots
 		for(int row = 0; row < 3; row++)
@@ -121,11 +118,11 @@ public class ContainerGunModTable extends Container
         if(gunStack != null && gunStack.getItem() instanceof ItemGun)
         {
         	GunType gunType = ((ItemGun)gunStack.getItem()).type;
-        	clickPaintjob(gunType.getPaintjob(id));
+        	//clickPaintjob(gunType.getPaintjob(id));
         }
 	}
 	
-	public void clickPaintjob(Paintjob paintjob)
+	/*public void clickPaintjob(Paintjob paintjob)
 	{
 		ItemStack gunStack = inventory.getStackInSlot(0);
         if(gunStack != null && gunStack.getItem() instanceof ItemGun)
@@ -171,8 +168,7 @@ public class ContainerGunModTable extends Container
 	    	}
 
 	    	//Paint the gun. This line is only reached if the player is in creative or they have had their dyes taken already
-			//gunStack.stackTagCompound.setString("Paint", paintjob.iconName);
 			gunStack.setItemDamage(paintjob.ID);
 		}
-	}
+	}*/
 }

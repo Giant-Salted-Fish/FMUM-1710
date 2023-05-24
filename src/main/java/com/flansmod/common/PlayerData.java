@@ -2,23 +2,18 @@ package com.flansmod.common;
 
 import java.util.ArrayList;
 
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.ResourceLocation;
-
-import com.flansmod.client.FlansModClient;
 import com.flansmod.common.guns.EntityGrenade;
 import com.flansmod.common.guns.EntityMG;
 import com.flansmod.common.guns.GunType;
-import com.flansmod.common.guns.ItemGun;
 import com.flansmod.common.guns.raytracing.PlayerSnapshot;
-import com.flansmod.common.network.PacketSelectOffHandGun;
 import com.flansmod.common.teams.PlayerClass;
 import com.flansmod.common.teams.Team;
 import com.flansmod.common.vector.Vector3f;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.util.ResourceLocation;
 
 public class PlayerData 
 {
@@ -33,23 +28,18 @@ public class PlayerData
 	public PlayerSnapshot[] snapshots;
 	
 	//Gun related fields
-	/** The slotID of the gun being used by the off-hand. 0 = no slot. 1 ~ 9 = hotbar slots */
-	public int offHandGunSlot = 0;
-	/** The off hand gun stack. For viewing other player's off hand weapons only (since you don't know what is in their inventory and hence just the ID is insufficient) */
-	@SideOnly(Side.CLIENT)
-	public ItemStack offHandGunStack;
 	/** The MG this player is using */
 	public EntityMG mountingGun;
 	/** Tickers to stop shooting too fast */
-	public float shootTimeRight, shootTimeLeft;
+	public float shootTimeRight;
 	/** Stops player shooting immediately after swapping weapons */
 	public int shootClickDelay;
 	/** True if this player is shooting */
-	public boolean isShootingRight, isShootingLeft;
+	public boolean isShootingRight;
 	/** The speed of the minigun the player is using */
 	public float minigunSpeed = 0F;
 	/** Reloading booleans */
-	public boolean reloadingRight, reloadingLeft;
+	public boolean reloadingRight;
 	/** When remote explosives are thrown they are added to this list. When the player uses a remote, the first one from this list detonates */
 	public ArrayList<EntityGrenade> remoteExplosives = new ArrayList<EntityGrenade>();
 	/** Sound delay parameters */
@@ -59,7 +49,7 @@ public class PlayerData
 	/** Melee weapon custom hit simulation */
 	public int meleeProgress, meleeLength;
 	/** When the player shoots a burst fire weapon, one shot is fired immediately and this counter keeps track of how many more should be fired */
-	public int burstRoundsRemainingLeft = 0, burstRoundsRemainingRight = 0;
+	public int burstRoundsRemainingRight = 0;
 	
 	public boolean isAmmoEmpty;
 
@@ -96,17 +86,10 @@ public class PlayerData
 	
 	public void tick(EntityPlayer player)
 	{
-		if(player.worldObj.isRemote)
-			clientTick(player);
 		if(shootTimeRight > 0)
 			shootTimeRight--;
 		if(shootTimeRight == 0)
 			reloadingRight = false;
-		
-		if(shootTimeLeft > 0)
-			shootTimeLeft--;
-		if(shootTimeLeft == 0)
-			reloadingLeft = false;
 		
 		if(shootClickDelay > 0)
 			shootClickDelay--;
@@ -123,18 +106,9 @@ public class PlayerData
 		}
 				
 		//Move all snapshots along one place
-        System.arraycopy(snapshots, 0, snapshots, 1, snapshots.length - 2 + 1);
+        System.arraycopy(snapshots, 0, snapshots, 1, snapshots.length - 1);
 		//Take new snapshot
 		snapshots[0] = new PlayerSnapshot(player);
-	}
-	
-	public void clientTick(EntityPlayer player)
-	{
-		if(player.getCurrentEquippedItem() == null || !(player.getCurrentEquippedItem().getItem() instanceof ItemGun) || ((ItemGun)player.getCurrentEquippedItem().getItem()).type.oneHanded || player.getCurrentEquippedItem() == offHandGunStack)
-		{
-			//offHandGunSlot = 0;
-			offHandGunStack = null;
-		}
 	}
 
 	public PlayerClass getPlayerClass()
@@ -154,44 +128,8 @@ public class PlayerData
 	public void playerKilled()
 	{
 		mountingGun = null;
-		isShootingRight = isShootingLeft = false;
+		isShootingRight = false;
 		snapshots = new PlayerSnapshot[FlansMod.numPlayerSnapshots];
-	}
-	
-	public void selectOffHandWeapon(EntityPlayer player, int slot)
-	{
-		if(isValidOffHandWeapon(player, slot))
-			offHandGunSlot = slot;
-	}
-	
-	public boolean isValidOffHandWeapon(EntityPlayer player, int slot)
-	{
-		if(slot == 0)
-			return true;
-		if(slot - 1 == player.inventory.currentItem)
-			return false;
-		ItemStack stackInSlot = player.inventory.getStackInSlot(slot - 1);
-		if(stackInSlot == null)
-			return false;
-		if(stackInSlot.getItem() instanceof ItemGun)
-		{
-			ItemGun item = ((ItemGun)stackInSlot.getItem());
-			if(item.type.oneHanded)
-				return true;
-		}
-		return false;
-	}
-
-	public void cycleOffHandItem(EntityPlayer player, int dWheel) 
-	{
-		if(dWheel < 0)
-			for(offHandGunSlot = ((offHandGunSlot + 1) % 10); !isValidOffHandWeapon(player, offHandGunSlot); offHandGunSlot = ((offHandGunSlot + 1) % 10)) ;
-		else if(dWheel > 0)
-			for(offHandGunSlot = ((offHandGunSlot + 9) % 10); !isValidOffHandWeapon(player, offHandGunSlot); offHandGunSlot = ((offHandGunSlot + 9) % 10)) ;
-		
-		FlansModClient.currentScope = null;
-		
-		FlansMod.getPacketHandler().sendToServer(new PacketSelectOffHandGun(offHandGunSlot));
 	}
 	
 	public void doMelee(EntityPlayer player, int meleeTime, GunType type)	
@@ -216,5 +154,4 @@ public class PlayerData
 			lastMeleePositions[k] = new Vector3f(player.posX + nextPosInPlayerCoords.x, player.posY + nextPosInPlayerCoords.y, player.posZ + nextPosInPlayerCoords.z);
 		}
 	}
-	
 }

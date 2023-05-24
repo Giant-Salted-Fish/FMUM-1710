@@ -3,14 +3,7 @@ package com.flansmod.common.teams;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.minecraft.client.model.ModelBase;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.world.World;
-
 import com.flansmod.common.FlansMod;
-import com.flansmod.common.guns.AttachmentType;
 import com.flansmod.common.guns.GunType;
 import com.flansmod.common.guns.ItemGun;
 import com.flansmod.common.paintjob.Paintjob;
@@ -19,6 +12,11 @@ import com.flansmod.common.types.TypeFile;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraft.client.model.ModelBase;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.world.World;
 
 public class PlayerClass extends InfoType
 {
@@ -157,34 +155,8 @@ public class PlayerClass extends InfoType
 			    	int genericID = 0;
 			    	for(int i = 0; i < itemNames.length - 1; i++)
 			    	{
-			    		AttachmentType attachment = AttachmentType.getAttachment(itemNames[i + 1]);
-			    		if(attachment != null)
-			    		{
-				    		String tagName = null;
-				    		switch(attachment.type)
-				    		{
-				    			case sights : tagName = "scope"; break;
-				    			case barrel : tagName = "barrel"; break;
-				    			case stock : tagName = "stock"; break;
-				    			case grip : tagName = "grip"; break;
-				    			case generic : tagName = "generic_" + genericID++; break;
-				    			// TODO: Implement new attachments to classes
-							    case accessory: break;
-							    case gadget: break;
-							    case pump: break;
-							    case slide: break;
-				    		}
-				    		NBTTagCompound specificAttachmentTags = new NBTTagCompound();
-				    		new ItemStack(attachment.item).writeToNBT(specificAttachmentTags);
-				    		attachmentTags.setTag(tagName, specificAttachmentTags);
-			    		}
-			    		//Maybe it was a paintjob
-			    		else
-			    		{
-			    			Paintjob paintjob = gunType.getPaintjob(itemNames[i + 1]);
-			    			if(paintjob != null)
-			    				tags.setString("Paint", paintjob.iconName);
-			    		}
+		    			Paintjob paintjob = gunType.getPaintjob(itemNames[i + 1]);
+		    			if(paintjob != null) stack.setItemDamage(paintjob.ID);;
 			    	}
 			    	tags.setTag("attachments", attachmentTags);
 			    	stack.stackTagCompound = tags;

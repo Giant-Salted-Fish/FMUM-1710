@@ -1,0 +1,10 @@
+// Naming
+Name H&K416 Bolt
+ShortName HK416Bolt
+Category HK416Bolt
+
+// Visual
+Icon HK416D10RS
+Model oc.ModelOCGun:HK416Bolt skins/HK416D10RS.png 0.1
+
+// Attributes

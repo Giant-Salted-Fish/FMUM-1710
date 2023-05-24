@@ -2,27 +2,21 @@ package com.flansmod.client.model;
 
 import org.lwjgl.opengl.GL11;
 
-import net.minecraft.client.model.ModelBase;
+import com.flansmod.common.FlansMod;
+
 import net.minecraft.client.renderer.entity.Render;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.ResourceLocation;
 
-import com.flansmod.common.FlansMod;
-
 public class RenderNull extends Render
 {
 	private static final ResourceLocation texture = new ResourceLocation("Flan", "null.png");
 
-    public RenderNull()
-    {
-        shadowSize = 0;
-    }
+    public RenderNull() { shadowSize = 0; }
 
     public void func_157_a(Entity entity, double d, double d1, double d2, 
-            float f, float f1)
-    {
-    }
+            float f, float f1) { }
 
     @Override
 	public void doRender(Entity entity, double d, double d1, double d2, 
@@ -48,10 +42,5 @@ public class RenderNull extends Render
     }
     
 	@Override
-	protected ResourceLocation getEntityTexture(Entity entity) 
-	{
-		return texture;
-	}
-	
-    protected ModelBase model;
+	protected ResourceLocation getEntityTexture(Entity entity) { return texture; }
 }

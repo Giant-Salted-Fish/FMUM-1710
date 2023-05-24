@@ -1,0 +1,10 @@
+// Naming
+Name LMT Stock Butt-Pad
+ShortName LMTStockButtPad
+Category LMTStockButtPad
+
+// Visual
+Icon HK416D10RS
+Model oc.ModelOCGun:LMTStockButtPad skins/HK416D10RS.png 0.1
+
+// Attributes

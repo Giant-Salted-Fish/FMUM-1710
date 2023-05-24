@@ -2,6 +2,13 @@ package com.flansmod.client.gui;
 
 import org.lwjgl.opengl.GL11;
 
+import com.flansmod.client.FlansModResourceHandler;
+import com.flansmod.client.model.RenderMecha;
+import com.flansmod.common.FlansMod;
+import com.flansmod.common.driveables.mechas.ContainerMechaInventory;
+import com.flansmod.common.driveables.mechas.EntityMecha;
+import com.flansmod.common.driveables.mechas.MechaType;
+
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.client.renderer.Tessellator;
@@ -9,13 +16,6 @@ import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.World;
-
-import com.flansmod.client.FlansModResourceHandler;
-import com.flansmod.client.model.RenderMecha;
-import com.flansmod.common.FlansMod;
-import com.flansmod.common.driveables.mechas.ContainerMechaInventory;
-import com.flansmod.common.driveables.mechas.EntityMecha;
-import com.flansmod.common.driveables.mechas.MechaType;
 
 public class GuiMechaInventory extends GuiContainer
 {

@@ -3,9 +3,6 @@ package com.flansmod.common.guns;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.minecraft.client.model.ModelBase;
-import net.minecraft.item.ItemStack;
-
 import com.flansmod.client.model.ModelAAGun;
 import com.flansmod.common.FlansMod;
 import com.flansmod.common.types.InfoType;
@@ -14,6 +11,8 @@ import com.flansmod.common.types.TypeFile;
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraft.client.model.ModelBase;
+import net.minecraft.item.ItemStack;
 
 public class AAGunType extends InfoType
 {
@@ -30,7 +29,10 @@ public class AAGunType extends InfoType
 	public int gunnerX, gunnerY, gunnerZ;
 	public String shootSound;
 	public String reloadSound;
-	public ModelAAGun model;
+	@SideOnly(Side.CLIENT)
+	public ModelAAGun model = null;
+	@SideOnly(Side.CLIENT)
+	public String modelName = null;
 	public float topViewLimit = 75F;
 	public float bottomViewLimit = 0F;
 	public int[] barrelX, barrelY, barrelZ;
@@ -69,49 +71,47 @@ public class AAGunType extends InfoType
 		super.read(split, file);
 		try
 		{
-			if (FMLCommonHandler.instance().getSide().isClient() && split[0].equals("Model"))
-			{
-				model = FlansMod.proxy.loadModel(split[1], shortName, ModelAAGun.class);
-			}
-			if (split[0].equals("Texture"))
+			if(FMLCommonHandler.instance().getSide().isClient() && split[0].equals("Model"))
+				model = FlansMod.proxy.loadModel(modelName = split[1], shortName, ModelAAGun.class);
+			if(split[0].equals("Texture"))
 			{
 				texture = split[1];
 			}
-			if (split[0].equals("Damage"))
+			if(split[0].equals("Damage"))
 			{
 				damage = Integer.parseInt(split[1]);
 			}
-			if (split[0].equals("ReloadTime"))
+			if(split[0].equals("ReloadTime"))
 			{
 				reloadTime = Integer.parseInt(split[1]);
 			}
-			if (split[0].equals("Recoil"))
+			if(split[0].equals("Recoil"))
 			{
 				recoil = Integer.parseInt(split[1]);
 			}
-			if (split[0].equals("Accuracy"))
+			if(split[0].equals("Accuracy"))
 			{
 				accuracy = Integer.parseInt(split[1]);
 			}
-			if (split[0].equals("ShootDelay"))
+			if(split[0].equals("ShootDelay"))
 			{
 				shootDelay = Integer.parseInt(split[1]);
 			}
-			if (split[0].equals("ShootSound"))
+			if(split[0].equals("ShootSound"))
 			{
 				shootSound = split[1];
 				FlansMod.proxy.loadSound(contentPack, "aaguns", split[1]);
 			}
-			if (split[0].equals("ReloadSound"))
+			if(split[0].equals("ReloadSound"))
 			{
 				reloadSound = split[1];
 				FlansMod.proxy.loadSound(contentPack, "aaguns", split[1]);
 			}
-			if (split[0].equals("FireAlternately"))
+			if(split[0].equals("FireAlternately"))
 			{
 				fireAlternately = split[1].equals("True");
 			}
-			if (split[0].equals("NumBarrels"))
+			if(split[0].equals("NumBarrels"))
 			{
 				numBarrels = Integer.parseInt(split[1]);
 				barrelX = new int[numBarrels];
@@ -125,19 +125,19 @@ public class AAGunType extends InfoType
 				barrelY[id] = Integer.parseInt(split[3]);
 				barrelZ[id] = Integer.parseInt(split[4]);
 			}
-			if (split[0].equals("Health"))
+			if(split[0].equals("Health"))
 			{
 				health = Integer.parseInt(split[1]);
 			}
-			if (split[0].equals("TopViewLimit"))
+			if(split[0].equals("TopViewLimit"))
 			{
 				topViewLimit = Float.parseFloat(split[1]);
 			}
-			if (split[0].equals("BottomViewLimit"))
+			if(split[0].equals("BottomViewLimit"))
 			{
 				bottomViewLimit = Float.parseFloat(split[1]);
 			}
-			if (split[0].equals("Ammo"))
+			if(split[0].equals("Ammo"))
 			{
 				BulletType type = BulletType.getBullet(split[1]);
 				if (type != null)
@@ -145,7 +145,7 @@ public class AAGunType extends InfoType
 					ammo.add(type);
 				}
 			}
-			if (split[0].equals("GunnerPos"))
+			if(split[0].equals("GunnerPos"))
 			{
 				gunnerX = Integer.parseInt(split[1]);
 				gunnerY = Integer.parseInt(split[2]);
@@ -165,60 +165,46 @@ public class AAGunType extends InfoType
 				targetMechas = targetPlanes = targetVehicles = Boolean.parseBoolean(split[1]);
 			if(split[0].equals("ShareAmmo"))
 				shareAmmo = Boolean.parseBoolean(split[1]);
-			if (split[0].equals("TargetRange"))
-			{
+			if(split[0].equals("TargetRange"))
 				targetRange = Float.parseFloat(split[1]);
-			}
 			if(split[0].equals("CanShootHomingMissile"))
 				canShootHomingMissile = Boolean.parseBoolean(split[1]);
-			if (split[0].equals("CountExplodeAfterShoot"))
+			if(split[0].equals("CountExplodeAfterShoot"))
 				countExplodeAfterShoot = Integer.parseInt(split[1]);
 			if(split[0].equals("IsDropThis"))
 				isDropThis = Boolean.parseBoolean(split[1]);
 
-		} catch (Exception e)
+		}
+		catch (Exception e)
 		{
 			FlansMod.log("" + e);
 		}
 	}
 
-	public boolean isAmmo(BulletType type)
-	{
-		return ammo.contains(type);
-	}
+	public boolean isAmmo(BulletType type) { return ammo.contains(type); }
 
-	public boolean isAmmo(ItemStack stack) {
-		if (stack == null)
-			return false;
-		return stack.getItem() instanceof ItemBullet && isAmmo(((ItemBullet) stack.getItem()).type);
-	}
+	public boolean isAmmo(ItemStack stack) { return stack != null && stack.getItem() instanceof ItemBullet && isAmmo(((ItemBullet)stack.getItem()).type); }
 
 	public static AAGunType getAAGun(String s)
 	{
-		for (AAGunType gun : infoTypes)
+		for(AAGunType gun : infoTypes)
 		{
-			if (gun.shortName.equals(s))
+			if(gun.shortName.equals(s))
 				return gun;
 		}
 		return null;
 	}
 	
 	/** To be overriden by subtypes for model reloading */
+	@Override
+	@SideOnly(Side.CLIENT)
 	public void reloadModel()
-	{
-		model = FlansMod.proxy.loadModel(modelString, shortName, ModelAAGun.class);
-	}
+	{ if(model != null) model = FlansMod.proxy.loadModel(modelName, shortName, ModelAAGun.class); }
 
 	@Override
-	public float GetRecommendedScale() 
-	{
-		return 50.0f;
-	}
+	public float GetRecommendedScale() { return 50F; }
 
 	@Override
 	@SideOnly(Side.CLIENT)
-	public ModelBase GetModel()
-	{
-		return model;
-	}
+	public ModelBase GetModel() { return model; }
 }

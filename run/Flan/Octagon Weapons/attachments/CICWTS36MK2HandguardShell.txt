@@ -1,0 +1,12 @@
+// Naming
+Name CIC WTS-36 MK2 Handguard Shell
+ShortName CICWTS36MK2HandguardShell
+Category PR
+
+// Visual
+Icon CICWTS36C
+Model oc.ModelOCGun:CICWTS36MK2HandguardShell skins/CICWTS36C.png 0.1
+
+// Attributes
+LeftHandPriority 2
+AttachableSlots 9 3.5 C[ CICWTS36MKHandguardShellEPR ]

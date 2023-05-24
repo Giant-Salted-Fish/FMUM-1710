@@ -67,7 +67,7 @@ public class GametypeZombies extends Gametype
 	{
 		if(teamsManager.currentRound.teams[0].members.size() > 0)
 		{
-			EntityPlayer zombifiedPlayer = teamsManager.getPlayer(teamsManager.currentRound.teams[0].members.get(rand.nextInt(teamsManager.currentRound.teams[0].members.size())));
+			EntityPlayer zombifiedPlayer = TeamsManager.getPlayer(teamsManager.currentRound.teams[0].members.get(rand.nextInt(teamsManager.currentRound.teams[0].members.size())));
 			teamsManager.messageAll("\u00a74" + zombifiedPlayer.getCommandSenderName() + "\u00a7c was infected with the \u00a74zombie plague\u00a7c!");
 			zombifiedPlayer.attackEntityFrom(DamageSource.generic, 1000000000F);
 		}

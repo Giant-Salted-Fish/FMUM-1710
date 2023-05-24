@@ -2,7 +2,38 @@ package com.flansmod.common.driveables.mechas;
 
 import java.util.ArrayList;
 
-import scala.collection.concurrent.Debug;
+import com.flansmod.client.debug.EntityDebugVector;
+import com.flansmod.client.gui.GuiDriveableController;
+import com.flansmod.client.model.GunAnimations;
+import com.flansmod.common.FlansMod;
+import com.flansmod.common.RotatedAxes;
+import com.flansmod.common.driveables.DriveableData;
+import com.flansmod.common.driveables.DriveablePart;
+import com.flansmod.common.driveables.DriveableType;
+import com.flansmod.common.driveables.EntityDriveable;
+import com.flansmod.common.driveables.EntitySeat;
+import com.flansmod.common.driveables.EnumDriveablePart;
+import com.flansmod.common.driveables.mechas.MechaType.LegNode;
+import com.flansmod.common.guns.BulletType;
+import com.flansmod.common.guns.GunType;
+import com.flansmod.common.guns.GunType.FireMode;
+import com.flansmod.common.guns.InventoryHelper;
+import com.flansmod.common.guns.ItemBullet;
+import com.flansmod.common.guns.ItemGun;
+import com.flansmod.common.guns.ShootableType;
+import com.flansmod.common.network.PacketDriveableDamage;
+import com.flansmod.common.network.PacketDriveableGUI;
+import com.flansmod.common.network.PacketDriveableKey;
+import com.flansmod.common.network.PacketMechaControl;
+import com.flansmod.common.network.PacketPlaySound;
+import com.flansmod.common.teams.TeamsManager;
+import com.flansmod.common.tools.ItemTool;
+import com.flansmod.common.vector.Vector3f;
+import com.flansmod.common.vector.Vector3i;
+
+import cpw.mods.fml.common.network.ByteBufUtils;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
@@ -21,51 +52,11 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.MovingObjectPosition;
-import net.minecraft.util.Vec3;
 import net.minecraft.util.MovingObjectPosition.MovingObjectType;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldSettings.GameType;
 import net.minecraftforge.common.ForgeHooks;
 import net.minecraftforge.event.world.BlockEvent;
-import cpw.mods.fml.common.network.ByteBufUtils;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
-
-import com.flansmod.client.debug.EntityDebugVector;
-import com.flansmod.client.gui.GuiDriveableController;
-import com.flansmod.client.model.GunAnimations;
-import com.flansmod.common.FlansMod;
-import com.flansmod.common.RotatedAxes;
-import com.flansmod.common.driveables.DriveableData;
-import com.flansmod.common.driveables.DriveablePart;
-import com.flansmod.common.driveables.DriveablePosition;
-import com.flansmod.common.driveables.DriveableType;
-import com.flansmod.common.driveables.DriveableType.ParticleEmitter;
-import com.flansmod.common.driveables.mechas.MechaType.LegNode;
-import com.flansmod.common.driveables.EntityDriveable;
-import com.flansmod.common.driveables.EntitySeat;
-import com.flansmod.common.driveables.EnumDriveablePart;
-import com.flansmod.common.driveables.EnumWeaponType;
-import com.flansmod.common.driveables.PilotGun;
-import com.flansmod.common.guns.BulletType;
-import com.flansmod.common.guns.EntityShootable;
-import com.flansmod.common.guns.EnumFireMode;
-import com.flansmod.common.guns.GunType;
-import com.flansmod.common.guns.InventoryHelper;
-import com.flansmod.common.guns.ItemBullet;
-import com.flansmod.common.guns.ItemGun;
-import com.flansmod.common.guns.ItemShootable;
-import com.flansmod.common.guns.ShootableType;
-import com.flansmod.common.network.PacketDriveableDamage;
-import com.flansmod.common.network.PacketDriveableGUI;
-import com.flansmod.common.network.PacketDriveableKey;
-import com.flansmod.common.network.PacketDriveableKeyHeld;
-import com.flansmod.common.network.PacketMechaControl;
-import com.flansmod.common.network.PacketPlaySound;
-import com.flansmod.common.teams.TeamsManager;
-import com.flansmod.common.tools.ItemTool;
-import com.flansmod.common.vector.Vector3f;
-import com.flansmod.common.vector.Vector3i;
 
 public class EntityMecha extends EntityDriveable
 {
@@ -387,17 +378,11 @@ public class EntityMecha extends EntityDriveable
 						breakingProgress = 0F;
 					breakingBlock = new Vector3i(hit.blockX, hit.blockY, hit.blockZ);
 				}
-			}
-			
+			}			
 			else if(heldItem instanceof ItemGun)
 			{
 				ItemGun gunItem = (ItemGun)heldItem;
 				GunType gunType = gunItem.type;
-
-				//If gun is in secondary/underbarrel fire, turn it off.
-				if(heldStack.stackTagCompound.hasKey("secondaryAmmo"))
-					if(gunType.getSecondaryFire(heldStack))
-						gunType.setSecondaryFire(heldStack, false);
 				
 				//Get the correct shoot delay
 				float delay = left ? shootDelayLeft : shootDelayRight;
@@ -408,12 +393,12 @@ public class EntityMecha extends EntityDriveable
 					//Go through the bullet stacks in the gun and see if any of them are not null
 					int bulletID = 0;
 					ItemStack bulletStack = null;
-					for(; bulletID < gunType.getNumAmmoItemsInGun(heldStack); bulletID++)
+					for(; bulletID < gunType.ammoCapacity; bulletID++)
 					{
-						ItemStack checkingStack = gunItem.getBulletItemStack(heldStack, bulletID);
-						if(checkingStack != null && checkingStack.getItem() != null && checkingStack.getItemDamage() < checkingStack.getMaxDamage())
+						ShootableType checkingType = GunType.getAmmoAt(heldStack, bulletID);
+						if(checkingType != null)
 						{
-							bulletStack = checkingStack;
+							bulletStack = new ItemStack(checkingType.item);
 							break;
 						}
 					}
@@ -421,7 +406,7 @@ public class EntityMecha extends EntityDriveable
 					//If no bullet stack was found, reload
 					if(bulletStack == null)
 					{
-						gunItem.reload(heldStack, gunType, worldObj, this, driveableData, (infiniteAmmo() || creative), false);
+						gunItem.reload(heldStack, worldObj, this, driveableData, (infiniteAmmo() || creative), false);
 					}
 					//A bullet stack was found, so try shooting with it
 					else if(bulletStack.getItem() instanceof ItemBullet)
@@ -433,27 +418,16 @@ public class EntityMecha extends EntityDriveable
 						//TODO : Move to client side and sync
 						if(worldObj.isRemote)
 						{
-							int pumpDelay = gunType.model == null ? 0 : gunType.model.pumpDelay;
-							int pumpTime = gunType.model == null ? 1 : gunType.model.pumpTime;
-							int hammerDelay = gunType.model == null ? 0 : gunType.model.hammerDelay;
-							int casingDelay = gunType.model == null ? 0 : gunType.model.casingDelay;
-							float hammerAngle = gunType.model == null ? 0 : gunType.model.hammerAngle;
-							float althammerAngle = gunType.model == null ? 0 : gunType.model.althammerAngle;
-
 							if(left)
-							{
-								leftAnimations.doShoot(pumpDelay, pumpTime, hammerDelay, hammerAngle, althammerAngle, casingDelay);
-							}
+								leftAnimations.doShoot(gunType, heldStack, false, 2, 0, 0F);
 							else
-							{
-								rightAnimations.doShoot(pumpDelay, pumpTime, hammerDelay, hammerAngle, althammerAngle, casingDelay);
-							}
+								rightAnimations.doShoot(gunType, heldStack, false, 2, 0 ,0F);
 						}
 						//Damage the bullet item
 						bulletStack.setItemDamage(bulletStack.getItemDamage() + 1);
 						
 						//Update the stack in the gun
-						gunItem.setBulletItemStack(heldStack, bulletStack, bulletID);
+						gunType.setBulletItemStack(heldStack, null, 0);
 					}
 				}
 			}
@@ -481,22 +455,22 @@ public class EntityMecha extends EntityDriveable
 		Vector3f bulletOrigin = Vector3f.add(armOrigin, gunVector, null);
 		
 		bulletOrigin  = Vector3f.add(new Vector3f(posX, posY, posZ), bulletOrigin, null);
-				
-		if(!worldObj.isRemote)
-			for (int k = 0; k < gunType.numBullets; k++)
-				worldObj.spawnEntityInWorld(((ItemBullet)bulletStack.getItem()).getEntity(worldObj, bulletOrigin, armVector, (EntityLivingBase)(seats[0].riddenByEntity), gunType.getSpread(stack) / 2F, gunType.getDamage(stack), gunType.getBulletSpeed(stack),bulletStack.getItemDamage(), mechaType));
+		
+		if(!worldObj.isRemote) for(int k = 0; k < gunType.numBullets; k++)
+				worldObj.spawnEntityInWorld(((ItemBullet)bulletStack.getItem()).getEntity(worldObj, bulletOrigin, armVector, (EntityLivingBase)(seats[0].riddenByEntity), 
+						gunType.bulletAimingSpread, gunType.damage, gunType.bulletSpeed, bulletStack.getItemDamage(), mechaType));
 		
 		if(left)
-			shootDelayLeft = gunType.mode == EnumFireMode.SEMIAUTO ? Math.max(gunType.shootDelay, 5) : gunType.shootDelay;
-		else shootDelayRight = gunType.mode == EnumFireMode.SEMIAUTO ? Math.max(gunType.shootDelay, 5) : gunType.shootDelay;
+			shootDelayLeft = gunType.fireMode[0] == FireMode.SEMI_AUTO ? Math.max(gunType.shootDelay, 5) : gunType.shootDelay;
+		else shootDelayRight = gunType.fireMode[0] == FireMode.SEMI_AUTO ? Math.max(gunType.shootDelay, 5) : gunType.shootDelay;
 		
 		if(bulletType.dropItemOnShoot != null && !creative)
 			ItemGun.dropItem(worldObj, this, bulletType.dropItemOnShoot);
 		
 		// Play a sound if the previous sound has finished
-		if((left ? soundDelayLeft : soundDelayRight) <= 0 && gunType.shootSound != null)
+		if((left ? soundDelayLeft : soundDelayRight) <= 0)
 		{
-			PacketPlaySound.sendSoundPacket(posX, posY, posZ, FlansMod.soundRange, dimension, gunType.shootSound, gunType.distortSound);
+			PacketPlaySound.sendSoundPacket(posX, posY, posZ, FlansMod.soundRange, dimension, gunType.shootSound[0], gunType.distortSound);
 			if(left)
 				soundDelayLeft = gunType.shootSoundLength;
 			else soundDelayRight = gunType.shootSoundLength;

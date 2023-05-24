@@ -1,24 +1,10 @@
 package com.flansmod.common.network;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.MessageToMessageCodec;
-
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.LinkedList;
 import java.util.List;
-
-import net.minecraft.client.Minecraft;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.network.INetHandler;
-import net.minecraft.network.NetHandlerPlayServer;
-import net.minecraft.network.Packet;
-import net.minecraft.server.MinecraftServer;
 
 import com.flansmod.common.FlansMod;
 
@@ -29,6 +15,18 @@ import cpw.mods.fml.common.network.NetworkRegistry;
 import cpw.mods.fml.common.network.internal.FMLProxyPacket;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.MessageToMessageCodec;
+import net.minecraft.client.Minecraft;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.network.INetHandler;
+import net.minecraft.network.NetHandlerPlayServer;
+import net.minecraft.network.Packet;
+import net.minecraft.server.MinecraftServer;
 
 /**
  * Flan's Mod packet handler class. Directs packet data to packet classes.
@@ -63,7 +61,6 @@ public class PacketHandler extends MessageToMessageCodec<FMLProxyPacket, PacketB
 			FlansMod.log("Tried to register packet " + cl.getCanonicalName() + " after mod initialisation.");
 			return false;
 		}
-
 		packets.add(cl);
 		return true;
 	}
@@ -75,13 +72,10 @@ public class PacketHandler extends MessageToMessageCodec<FMLProxyPacket, PacketB
 		ByteBuf encodedData = Unpooled.buffer();
 		//Get the packet class
 		Class<? extends PacketBase> cl = msg.getClass();
-
 		//If this packet has not been registered by our handler, reject it
-		if(!packets.contains(cl))
-			throw new NullPointerException("Packet not registered : " + cl.getCanonicalName());
-
+		if(!packets.contains(cl)) throw new NullPointerException("Packet not registered : " + cl.getCanonicalName());
 		//Like a packet ID. Stored as the first entry in the packet code for recognition
-		byte discriminator = (byte) packets.indexOf(cl);
+		byte discriminator = (byte)packets.indexOf(cl);
 		encodedData.writeByte(discriminator);
 		//Get the packet class to encode our packet
 		msg.encodeInto(ctx, encodedData);
@@ -101,8 +95,7 @@ public class PacketHandler extends MessageToMessageCodec<FMLProxyPacket, PacketB
 		Class<? extends PacketBase> cl = packets.get(discriminator);
 
 		//If this discriminator returns no class, reject it
-		if(cl == null)
-			throw new NullPointerException("Packet not registered for discriminator : " + discriminator);
+		if(cl == null) throw new NullPointerException("Packet not registered for discriminator : " + discriminator);
 
 		//Create an empty packet and decode our packet data into it
 		PacketBase packet = cl.newInstance();
@@ -110,17 +103,12 @@ public class PacketHandler extends MessageToMessageCodec<FMLProxyPacket, PacketB
 		//Check the side and handle our packet accordingly
 		switch(FMLCommonHandler.instance().getEffectiveSide())
 		{
-		case CLIENT :
-		{
-			packet.handleClientSide(getClientPlayer());
-			break;
-		}
-		case SERVER :
-		{
-			INetHandler netHandler = ctx.channel().attr(NetworkRegistry.NET_HANDLER).get();
-			packet.handleServerSide(((NetHandlerPlayServer)netHandler).playerEntity);
-			break;
-		}
+			case CLIENT : packet.handleClientSide(getClientPlayer()); break;
+			case SERVER :
+				INetHandler netHandler = ctx.channel().attr(NetworkRegistry.NET_HANDLER).get();
+				packet.handleServerSide(((NetHandlerPlayServer)netHandler).playerEntity);
+				break;
+			default:;
 		}
 	}
 
@@ -128,7 +116,6 @@ public class PacketHandler extends MessageToMessageCodec<FMLProxyPacket, PacketB
 	public void initialise()
 	{
 		channels = NetworkRegistry.INSTANCE.newChannel("FlansMod", this);
-
 		registerPacket(PacketAAGunAngles.class);
 		registerPacket(PacketBaseEdit.class);
 		registerPacket(PacketBreakSound.class);
@@ -143,14 +130,12 @@ public class PacketHandler extends MessageToMessageCodec<FMLProxyPacket, PacketB
 		registerPacket(PacketFlak.class);
 		registerPacket(PacketExplosion.class);
 		registerPacket(PacketGunFire.class);
-		registerPacket(PacketGunMode.class);
+		registerPacket(PacketOperation.class);
 		registerPacket(PacketGunPaint.class);
-		registerPacket(PacketGunSpread.class);
 		registerPacket(PacketKillMessage.class);
 		registerPacket(PacketMechaControl.class);
 		registerPacket(PacketMGFire.class);
 		registerPacket(PacketMGMount.class);
-		registerPacket(PacketOffHandGunInfo.class);
 		registerPacket(PacketParticle.class);
 		registerPacket(PacketPlaneControl.class);
 		registerPacket(PacketPlaySound.class);
@@ -159,27 +144,26 @@ public class PacketHandler extends MessageToMessageCodec<FMLProxyPacket, PacketB
 		registerPacket(PacketRoundFinished.class);
 		registerPacket(PacketSeatUpdates.class);
 		registerPacket(PacketSeatCheck.class);
-		registerPacket(PacketSelectOffHandGun.class);
 		registerPacket(PacketTeamInfo.class);
 		registerPacket(PacketTeamSelect.class);
 		registerPacket(PacketVehicleControl.class);
 		registerPacket(PacketVoteCast.class);
 		registerPacket(PacketVoting.class);
 		registerPacket(PacketRequestDebug.class);
-		registerPacket(PacketFlashBang.class);
 		registerPacket(PacketImpactPoint.class);
 		registerPacket(PacketModConfig.class);
-		registerPacket(PacketGunRecoil.class);
-		registerPacket(PacketGunState.class);
+		registerPacket(PacketGunAttachment.class);
+		registerPacket(PacketGunNBTUpdate.class);
+		registerPacket(PacketPlayerShoot.class);
+		registerPacket(PacketPlayerCharge.class);
+		registerPacket(PacketPlayerCheck.class);
 	}
 
 	/** Post-Initialisation method called from FMLPostInitializationEvent in FlansMod
 	 * Logically sorts the packets client and server side to ensure a matching ordering */
 	public void postInitialise()
 	{
-		if(modInitialised)
-			return;
-
+		if(modInitialised) return;
 		modInitialised = true;
 		//Define our comparator on the fly and apply it to our list
 		Collections.sort(packets,
@@ -189,18 +173,14 @@ public class PacketHandler extends MessageToMessageCodec<FMLProxyPacket, PacketB
 			public int compare(Class<? extends PacketBase> c1, Class<? extends PacketBase> c2)
 			{
 				int com = String.CASE_INSENSITIVE_ORDER.compare(c1.getCanonicalName(), c2.getCanonicalName());
-				if(com == 0)
-					com = c1.getCanonicalName().compareTo(c2.getCanonicalName());
+				if(com == 0) com = c1.getCanonicalName().compareTo(c2.getCanonicalName());
 				return com;
 			}
 		});
 	}
 
 	@SideOnly(Side.CLIENT)
-	private EntityPlayer getClientPlayer()
-	{
-		return Minecraft.getMinecraft().thePlayer;
-	}
+	private EntityPlayer getClientPlayer() { return Minecraft.getMinecraft().thePlayer; }
 
 	/** Send a packet to all players */
 	public void sendToAll(PacketBase packet)

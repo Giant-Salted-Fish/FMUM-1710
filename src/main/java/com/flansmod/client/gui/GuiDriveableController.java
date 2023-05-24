@@ -1,10 +1,5 @@
 package com.flansmod.client.gui;
 
-import net.minecraft.client.gui.GuiChat;
-import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.client.gui.inventory.GuiInventory;
-import net.minecraft.entity.player.EntityPlayer;
-
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 
@@ -12,6 +7,11 @@ import com.flansmod.api.IControllable;
 import com.flansmod.client.FlansModClient;
 import com.flansmod.client.KeyInputHandler;
 import com.flansmod.common.FlansMod;
+
+import net.minecraft.client.gui.GuiChat;
+import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.client.gui.inventory.GuiInventory;
+import net.minecraft.entity.player.EntityPlayer;
 
 public class GuiDriveableController extends GuiScreen 
 {
@@ -128,7 +128,7 @@ public class GuiDriveableController extends GuiScreen
 		{
 			FlansMod.DEBUG = !FlansMod.DEBUG;
 		}*/
-		if(i == KeyInputHandler.reloadModelsKey.getKeyCode())
+		if(i == KeyInputHandler.getReloadModelKeyCode())
 		{
 			FlansModClient.reloadModels(false);
 		}
@@ -186,7 +186,7 @@ public class GuiDriveableController extends GuiScreen
 			{
 				plane.pressKey(4, player);
 			}
-			if(FlansMod.proxy.keyDown(KeyInputHandler.downKey.getKeyCode()))
+			if(KeyInputHandler.FlanVKeyBinding.V_DOWN.keyDown())
 			{
 				plane.pressKey(5, player);
 			}	
@@ -194,39 +194,39 @@ public class GuiDriveableController extends GuiScreen
 			{
 				plane.pressKey(6, player);
 			}	
-			if(FlansMod.proxy.keyDown(KeyInputHandler.inventoryKey.getKeyCode()))
+			if(KeyInputHandler.FlanVKeyBinding.V_INVENTORY.keyDown())
 			{
 				plane.pressKey(7, player);
 			}
-			if(FlansMod.proxy.keyDown(KeyInputHandler.bombKey.getKeyCode()))
+			if(KeyInputHandler.FlanVKeyBinding.V_BOMB.keyDown())
 			{
 				plane.pressKey(8, player);
 			}
-			if(FlansMod.proxy.keyDown(KeyInputHandler.gunKey.getKeyCode()))
+			if(KeyInputHandler.FlanVKeyBinding.V_GUN.keyDown())
 			{
 				plane.pressKey(9, player);
 			}				
-			if(FlansMod.proxy.keyDown(KeyInputHandler.controlSwitchKey.getKeyCode()))
+			if(KeyInputHandler.FlanVKeyBinding.V_CONTROL_SWITCH.keyDown())
 			{
 				plane.pressKey(10, player);
 			}				
-			if(FlansMod.proxy.keyDown(KeyInputHandler.leftRollKey.getKeyCode()))
+			if(KeyInputHandler.FlanVKeyBinding.V_ROLL_LEFT.keyDown())
 			{
 				plane.pressKey(11, player);
 			}				
-			if(FlansMod.proxy.keyDown(KeyInputHandler.rightRollKey.getKeyCode()))
+			if(KeyInputHandler.FlanVKeyBinding.V_ROLL_RIGHT.keyDown())
 			{
 				plane.pressKey(12, player);
 			}				
-			if(FlansMod.proxy.keyDown(KeyInputHandler.gearKey.getKeyCode()))
+			if(KeyInputHandler.FlanVKeyBinding.V_GEAR.keyDown())
 			{
 				plane.pressKey(13, player);
 			}				
-			if(FlansMod.proxy.keyDown(KeyInputHandler.doorKey.getKeyCode()))
+			if(KeyInputHandler.FlanVKeyBinding.V_DOOR.keyDown())
 			{
 				plane.pressKey(14, player);
 			}				
-			if(FlansMod.proxy.keyDown(KeyInputHandler.modeKey.getKeyCode()))
+			if(KeyInputHandler.FlanVKeyBinding.V_MODE.keyDown())
 			{
 				plane.pressKey(15, player);
 			}				
@@ -234,7 +234,7 @@ public class GuiDriveableController extends GuiScreen
 			//{
 			//	plane.pressKey(16, player);
 			//}				
-			if(FlansMod.proxy.keyDown(KeyInputHandler.flareKey.getKeyCode()))
+			if(KeyInputHandler.FlanVKeyBinding.V_FLARE.keyDown())
 			{
 				plane.pressKey(18, player);
 			}				

@@ -2,7 +2,6 @@ package com.flansmod.client;
 
 import com.flansmod.common.FlansMod;
 import com.flansmod.common.driveables.EntityDriveable;
-import com.flansmod.common.guns.EntityBullet;
 import com.flansmod.common.vector.Vector3f;
 
 import net.minecraft.entity.Entity;

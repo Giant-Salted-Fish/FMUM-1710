@@ -1,0 +1,17 @@
+﻿// Naming
+Name HK416 D10RS
+ShortName HK416D10RS
+
+// Visual
+Icon HK416D10RS
+Model oc.ModelOCGun:HK416LowerReceiver skins/HK416D10RS.png 0.1
+
+// Ammo
+ItsType gun
+Mag 556x45mmmag
+
+// Attributes //
+AimCenter 64
+Mode safe semiauto fullauto
+AttachableSlots -44 36.5 C[ HK416UpperReceiver ] | -49 43 C[ ARBufferTube ] | -52.5 35.5 C[ ARReceiverEndPlate ] | -34 28 0 180 C[ ARPistolGrip ]
+DefaultAttachments HK416UpperReceiver [ CICIS4RearSight 1 | HK416BarrelExtension [ HK416145Barrel [ 556mmThreadProtector | HK416GasBlock [ HK416FrontSight | HK416Piston ] ] ] | HK416BarrelNut [ HK416145Handguard [ | | CICSN1Handstop 8 ] ] | HK416PistonGuide | HK416Bolt | HK416ChargeHandle | HK416DustCover ] | HK416BufferTube [ LMTStock 3 [ LMTStockButtPad ] ] | HK416ReceiverEndPlate [ HK416ReceiverExtensionNut ] | HK416PistolGrip

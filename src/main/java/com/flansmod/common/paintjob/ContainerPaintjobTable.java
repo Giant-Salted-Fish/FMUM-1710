@@ -1,12 +1,7 @@
 package com.flansmod.common.paintjob;
 
-import com.flansmod.common.guns.GunType;
-import com.flansmod.common.guns.ItemGun;
-import com.flansmod.common.guns.SlotGun;
-
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
-import net.minecraft.init.Items;
 import net.minecraft.inventory.Container;
 import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
@@ -110,17 +105,17 @@ public class ContainerPaintjobTable extends Container
 		ItemStack paintableStack = table.getPaintableStack();
 		if(paintableStack != null && paintableStack.getItem() instanceof IPaintableItem)
 		{
-			PaintableType paintableType = ((IPaintableItem)paintableStack.getItem()).GetPaintableType();
-			clickPaintjob(paintableType.getPaintjob(i));
+			PaintableType paintableType = ((IPaintableItem)paintableStack.getItem()).getPaintableType();
+			//clickPaintjob(paintableType.getPaintjob(i));
 		}
 	}
 	
-	public void clickPaintjob(Paintjob paintjob)
+	/*public void clickPaintjob(Paintjob paintjob)
 	{
 		ItemStack paintableStack = table.getPaintableStack();
 		if(paintableStack != null && paintableStack.getItem() instanceof IPaintableItem)
 		{
-			PaintableType paintableType = ((IPaintableItem)paintableStack.getItem()).GetPaintableType();
+			PaintableType paintableType = ((IPaintableItem)paintableStack.getItem()).getPaintableType();
 
 			int numDyes = paintjob.dyesNeeded.length;
 
@@ -161,8 +156,7 @@ public class ContainerPaintjobTable extends Container
 	    	}
 	    	
 	    	//Paint the gun. This line is only reached if the player is in creative or they have had their dyes taken already
-			//gunStack.getTagCompound().setString("Paint", paintjob.iconName);
 			paintableStack.setItemDamage(paintjob.ID);
 		}
-	}
+	}*/
 }

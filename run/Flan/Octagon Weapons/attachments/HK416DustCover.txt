@@ -1,0 +1,10 @@
+// Naming
+Name H&K416 Dust Cover
+ShortName HK416DustCover
+Category HK416DustCover
+
+// Visual
+Icon HK416D10RS
+Model oc.ModelOCGun:HK416DustCover skins/HK416D10RS.png 0.1
+
+// Attributes

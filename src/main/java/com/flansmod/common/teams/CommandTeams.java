@@ -2,6 +2,8 @@ package com.flansmod.common.teams;
 
 import java.util.List;
 
+import com.flansmod.common.FlansMod;
+
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.ICommandSender;
 import net.minecraft.entity.player.EntityPlayer;
@@ -10,8 +12,6 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.EnumChatFormatting;
-
-import com.flansmod.common.FlansMod;
 
 public class CommandTeams extends CommandBase
 {
@@ -264,7 +264,7 @@ public class CommandTeams extends CommandBase
 			}
 			Team[] teams = new Team[teamsManager.teams.length];
 			String teamList = "";
-			for(int i = 0; i < split.length - 1; i++)
+			for(int i = 0; i < split.length-1; i++)
 			{
 				Team team = Team.getTeam(split[i + 1]);
 				if(team == null)

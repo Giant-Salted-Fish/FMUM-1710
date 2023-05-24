@@ -4,10 +4,24 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import io.netty.buffer.ByteBuf;
-
 import org.lwjgl.input.Mouse;
 
+import com.flansmod.common.FlansMod;
+import com.flansmod.common.PlayerHandler;
+import com.flansmod.common.guns.GunType.FireMode;
+import com.flansmod.common.network.PacketMGFire;
+import com.flansmod.common.network.PacketMGMount;
+import com.flansmod.common.network.PacketPlaySound;
+import com.flansmod.common.teams.EntityGunItem;
+import com.flansmod.common.teams.Team;
+import com.flansmod.common.teams.TeamsManager;
+
+import cpw.mods.fml.client.FMLClientHandler;
+import cpw.mods.fml.common.network.ByteBufUtils;
+import cpw.mods.fml.common.registry.IEntityAdditionalSpawnData;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
+import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.EntityLivingBase;
@@ -18,20 +32,6 @@ import net.minecraft.util.DamageSource;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
-import cpw.mods.fml.client.FMLClientHandler;
-import cpw.mods.fml.common.network.ByteBufUtils;
-import cpw.mods.fml.common.registry.IEntityAdditionalSpawnData;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
-
-import com.flansmod.common.FlansMod;
-import com.flansmod.common.PlayerHandler;
-import com.flansmod.common.network.PacketMGFire;
-import com.flansmod.common.network.PacketMGMount;
-import com.flansmod.common.network.PacketPlaySound;
-import com.flansmod.common.teams.EntityGunItem;
-import com.flansmod.common.teams.Team;
-import com.flansmod.common.teams.TeamsManager;
 
 public class EntityMG extends Entity implements IEntityAdditionalSpawnData
 {
@@ -121,9 +121,9 @@ public class EntityMG extends Entity implements IEntityAdditionalSpawnData
 			}
 			rotationPitch = gunner.rotationPitch;
 			// Keep it within reasonable angles
-			if (rotationYaw > type.sideViewLimit)
+			if(rotationYaw > type.sideViewLimit)
 				prevRotationYaw = rotationYaw = type.sideViewLimit;
-			if (rotationYaw < -type.sideViewLimit)
+			if(rotationYaw < -type.sideViewLimit)
 				prevRotationYaw = rotationYaw = -type.sideViewLimit;
 
 			// Keep user standing behind the gun
@@ -140,35 +140,35 @@ public class EntityMG extends Entity implements IEntityAdditionalSpawnData
 			rotationPitch--;
 		}
 
-		if (rotationPitch < type.topViewLimit)
+		if(rotationPitch < type.topViewLimit)
 			rotationPitch = type.topViewLimit;
-		if (rotationPitch > type.bottomViewLimit)
+		if(rotationPitch > type.bottomViewLimit)
 			rotationPitch = type.bottomViewLimit;
 		
 		if(shootDelay > 0)
 			shootDelay--;
 
 		// Decrement the reload timer and reload
-		if (reloadTimer > 0)
+		if(reloadTimer > 0)
 			reloadTimer--;
-		if (ammo != null && ammo.getItemDamage() == ammo.getMaxDamage())
+		if(ammo != null && ammo.getItemDamage() == ammo.getMaxDamage())
 		{
 			ammo = null;
 			// Scrap metal output?
 		}
-		if (ammo == null && gunner != null)
+		if(ammo == null && gunner != null)
 		{
 			int slot = findAmmo(gunner);
-			if (slot >= 0)
+			if(slot >= 0)
 			{
 				ammo = gunner.inventory.getStackInSlot(slot);
 				if (!gunner.capabilities.isCreativeMode)
 					gunner.inventory.setInventorySlotContents(slot, null);
-				reloadTimer = type.reloadTime;
+				reloadTimer = type.reloadTimes[0];
 				PacketPlaySound.sendSoundPacket(posX, posY, posZ, FlansMod.soundRange, dimension, type.reloadSound, false);
 			}
 		}
-		if (worldObj.isRemote && gunner != null && gunner == FMLClientHandler.instance().getClient().thePlayer && type.mode == EnumFireMode.FULLAUTO)
+		if(worldObj.isRemote && gunner != null && gunner == FMLClientHandler.instance().getClient().thePlayer && type.fireMode[0] == FireMode.FULL_AUTO)
 		{
 			//Send a packet!
 			checkForShooting();
@@ -178,23 +178,23 @@ public class EntityMG extends Entity implements IEntityAdditionalSpawnData
 			if(gunner == null || gunner.isDead)
 				isShooting = false;
 			// Check for ammo / reloading
-			if (ammo == null || reloadTimer > 0 || shootDelay > 0)
+			if(ammo == null || reloadTimer > 0 || shootDelay > 0)
 			{
 				return;
 			}
 			// Fire
 			BulletType bullet = BulletType.getBullet(ammo.getItem());
-			if (gunner != null && !gunner.capabilities.isCreativeMode)
+			if(gunner != null && !gunner.capabilities.isCreativeMode)
 				ammo.damageItem(1, gunner);
 			shootDelay = type.shootDelay;
 			worldObj.spawnEntityInWorld(((ItemBullet)ammo.getItem()).getEntity(worldObj, Vec3.createVectorHelper(blockX + 0.5D, blockY + type.pivotHeight, blockZ + 0.5D), (direction * 90F + rotationYaw), rotationPitch, gunner, type.bulletSpread, type.damage, ammo.getItemDamage(), type));
-			if (soundDelay <= 0)
+			if(soundDelay <= 0)
 			{
 				soundDelay = type.shootSoundLength;
-				PacketPlaySound.sendSoundPacket(posX, posY, posZ, FlansMod.soundRange, dimension, type.shootSound, type.distortSound);
+				PacketPlaySound.sendSoundPacket(posX, posY, posZ, FlansMod.soundRange, dimension, type.shootSound[0], type.distortSound);
 			}
 		}
-		if (soundDelay > 0)
+		if(soundDelay > 0)
 			soundDelay--;
 	}
 	
@@ -222,33 +222,31 @@ public class EntityMG extends Entity implements IEntityAdditionalSpawnData
 	@Override
 	public boolean attackEntityFrom(DamageSource damagesource, float i)
 	{
-		if (damagesource.damageType.equals("player"))
+		if(damagesource.damageType.equals("player"))
 		{
 			Entity player = damagesource.getEntity();
-			if (player == gunner)
+			if(player == gunner)
 			{
 				// Player left clicked on the gun
-				if (type.mode == EnumFireMode.FULLAUTO)
+				if(type.fireMode[0] == FireMode.FULL_AUTO)
 					return true;
 				// Check for ammo / reloading
-				if (ammo == null || reloadTimer > 0 || shootDelay > 0)
+				if(ammo == null || reloadTimer > 0 || shootDelay > 0)
 				{
 					return true;
 				}
 				// Fire
 				BulletType bullet = BulletType.getBullet(ammo.getItem());
-				if (gunner != null && !gunner.capabilities.isCreativeMode)
+				if(gunner != null && !gunner.capabilities.isCreativeMode)
 					ammo.damageItem(1, (EntityLiving) player);
 				shootDelay = type.shootDelay;
-				if (!worldObj.isRemote)
-				{
-					worldObj.spawnEntityInWorld(((ItemBullet)ammo.getItem()).getEntity(worldObj, (EntityLivingBase) player, type.bulletSpread, type.damage, type.bulletSpeed, false, ammo.getItemDamage(), type));
-				}
+				if(!worldObj.isRemote)
+					worldObj.spawnEntityInWorld(((ItemBullet)ammo.getItem()).getEntity(worldObj, (EntityLivingBase)player, type.bulletSpread, type.damage, type.bulletSpeed, ammo.getItemDamage(), type));
 				if (soundDelay <= 0)
 				{
 					float distortion = type.distortSound ? 1.0F / (rand.nextFloat() * 0.4F + 0.8F) : 1F;
-					//worldObj.playSoundAtEntity(this, type.shootSound, 1.0F, distortion);
-					PacketPlaySound.sendSoundPacket(posX, posY, posZ, FlansMod.soundRange, dimension, type.shootSound, type.distortSound);
+					//worldObj.playSoundAtEntity(this, type.shootSound[0], 1.0F, distortion);
+					PacketPlaySound.sendSoundPacket(posX, posY, posZ, FlansMod.soundRange, dimension, type.shootSound[0], type.distortSound);
 
 					soundDelay = type.shootSoundLength;
 				}
@@ -303,7 +301,7 @@ public class EntityMG extends Entity implements IEntityAdditionalSpawnData
 				{
 					ammo = player.inventory.getStackInSlot(slot);
 					player.inventory.setInventorySlotContents(slot, null);
-					reloadTimer = type.reloadTime;
+					reloadTimer = type.reloadTimes[0];
 					worldObj.playSoundAtEntity(this, type.reloadSound, 1.0F, 1.0F / (rand.nextFloat() * 0.4F + 0.8F));
 				}
 			}
@@ -333,13 +331,10 @@ public class EntityMG extends Entity implements IEntityAdditionalSpawnData
 	
 	public int findAmmo(EntityPlayer player)
 	{
-		for (int i = 0; i < player.inventory.getSizeInventory(); i++)
+		for(int i = -1, size = player.inventory.getSizeInventory(); ++i < size; )
 		{
 			ItemStack stack = player.inventory.getStackInSlot(i);
-			if (type.isAmmo(stack))
-			{
-				return i;
-			}
+			if(type.isValidAmmo(stack)) return i;
 		}
 		return -1;
 	}

@@ -1,55 +1,38 @@
 package com.flansmod.client.model;
 
-import com.flansmod.common.vector.Vector3f;
-import net.minecraft.client.model.ModelBase;
-
 import com.flansmod.client.tmt.ModelRendererTurbo;
+import com.flansmod.common.vector.Vector3f;
 
-public class ModelAttachment extends ModelBase 
+public abstract class ModelAttachment extends ModelFlan
 {
 	public ModelRendererTurbo[] attachmentModel = new ModelRendererTurbo[0];
-	public ModelRendererTurbo[] ammoModel = new ModelRendererTurbo[0];
-
-	public EnumAnimationType secondaryAnimType = EnumAnimationType.NONE;
-	public float tiltGunTime = 0.15F, unloadClipTime = 0.35F, loadClipTime = 0.35F, untiltGunTime = 0.15F;
-	/** For rifles and shotguns. Currently a generic reload animation regardless of how full the internal magazine already is */
-	public float numBulletsInReloadAnimation = 1;
-	/** For end loaded projectiles */
-	public float endLoadedAmmoDistance = 1F;
-	/** For big scopes, so that the player actually looks through them properly */
-	public float renderOffset = 0F;
-	/** Visual recoil of the gun when firing */
-	public float recoilDistance = 2F / 16F;
-	public float recoilAngle = -8F;
-	/** Offset the flash model if enabled */
-	public Vector3f attachmentFlashOffset = new Vector3f(0F, 0F, 0F);
 	
-	public void renderAttachment(float f)
-	{
-		for(ModelRendererTurbo model : attachmentModel)
-			if(model != null)
-				model.render(f);
-	}
-
-	public void renderAttachmentAmmo(float f)
-	{
-		for(ModelRendererTurbo model : ammoModel)
-			if(model != null)
-				model.render(f);
-	}
-
-	public void flipAll()
-	{
-		for (ModelRendererTurbo anAttachmentModel : attachmentModel)
-		{
-			anAttachmentModel.doMirror(false, true, true);
-			anAttachmentModel.setRotationPoint(anAttachmentModel.rotationPointX, -anAttachmentModel.rotationPointY, -anAttachmentModel.rotationPointZ);
-		}
-
-		for (ModelRendererTurbo anAmmoModel : ammoModel)
-		{
-			anAmmoModel.doMirror(false, true, true);
-			anAmmoModel.setRotationPoint(anAmmoModel.rotationPointX, -anAmmoModel.rotationPointY, -anAmmoModel.rotationPointZ);
-		}
-	}
+	/** laser origin */
+	public Vector3f laserFrom = new Vector3f(0F);
+	
+	/** amount for muzzle flash model to translate */
+	public Vector3f muzzleFlashPoint = new Vector3f(0F);
+	
+	/** whether muzzle flash will free rotate when render it */
+	public boolean flashFreeRotate = true;
+	
+	/** the basic translate and rotate for the hand holding this grip */
+	public Vector3f armTranslate = new Vector3f(0F), armRotate = new Vector3f(0F);
+	
+	@Override
+	public void render(float f) { render(attachmentModel, f); }
+	
+	protected static byte getFireModeNum() { return RenderGun.fireModeNum; }
+	
+	protected static byte getZoomStep() { return RenderGun.zoomStep; }
+	
+	protected static byte getReticleNum() { return RenderGun.reticleNum; }
+	
+	protected static boolean getLaserOn() { return RenderGun.laserOn; }
+	
+	protected static boolean getLightOn() { return RenderGun.lightOn; }
+	
+	public void flipAll() { flip(attachmentModel); }
+	
+	public void flipAllBy(boolean x, boolean y, boolean z) { flipBy(attachmentModel, x, y, z); }
 }

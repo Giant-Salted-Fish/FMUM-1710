@@ -9,7 +9,6 @@ import com.flansmod.common.driveables.EnumDriveablePart;
 import com.flansmod.common.driveables.mechas.EntityMecha;
 import com.flansmod.common.driveables.mechas.MechaType;
 import com.flansmod.common.vector.Vector3f;
-import net.minecraft.util.Vec3;
 
 public class ModelMecha extends ModelDriveable 
 {

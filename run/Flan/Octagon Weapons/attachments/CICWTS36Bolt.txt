@@ -1,0 +1,10 @@
+// Naming
+Name CIC WTS-36 Bolt
+ShortName CICWTS36Bolt
+Category CICWTS36Bolt
+
+// Visual
+Icon CICWTS36C
+Model oc.ModelOCGun:CICWTS36Bolt skins/CICWTS36C.png 0.1
+
+// Attributes

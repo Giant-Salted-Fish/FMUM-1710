@@ -4,12 +4,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.init.Blocks;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemBlock;
-import net.minecraft.item.ItemStack;
-
 import com.flansmod.common.driveables.DriveableType;
 import com.flansmod.common.driveables.EnumPlaneMode;
 import com.flansmod.common.driveables.ItemPlane;
@@ -19,12 +13,15 @@ import com.flansmod.common.guns.ItemAAGun;
 import com.flansmod.common.guns.ItemAttachment;
 import com.flansmod.common.guns.ItemBullet;
 import com.flansmod.common.guns.ItemGrenade;
-import com.flansmod.common.guns.ItemGun;
 import com.flansmod.common.types.IFlanItem;
-import com.flansmod.common.types.InfoType;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraft.creativetab.CreativeTabs;
+import net.minecraft.init.Blocks;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemBlock;
+import net.minecraft.item.ItemStack;
 
 public class CreativeTabFlan extends CreativeTabs
 {
@@ -79,10 +76,7 @@ public class CreativeTabFlan extends CreativeTabs
 					String it1 = ((IFlanItem)i1).getInfoType().packName;
 					String it2 = ((IFlanItem)i2).getInfoType().packName;
 					int cmp = it1.compareTo(it2);
-					if(cmp!=0)
-					{
-						return cmp;
-					}
+					if(cmp != 0) return cmp;
 				}
 
 				if(i1 instanceof ItemBlockManyNames && i2 instanceof ItemBlockManyNames==false)	return -1;
@@ -105,7 +99,7 @@ public class CreativeTabFlan extends CreativeTabs
 				if(i2 instanceof ItemVehicle)	dt2 = ((ItemVehicle)i2).type;
 				if(i1 instanceof ItemPlane)		dt1 = ((ItemPlane)i1).type;
 				if(i2 instanceof ItemPlane)		dt2 = ((ItemPlane)i2).type;
-				if(dt1 != null && dt2 != null)
+				/*if(dt1 != null && dt2 != null) //TODO
 				{
 					String ct1 = "";
 					String ct2 = "";
@@ -115,7 +109,7 @@ public class CreativeTabFlan extends CreativeTabs
 					{
 						return ct1.compareTo(ct2);
 					}
-				}
+				}*/
 
 				if(i1 instanceof ItemVehicle && i2 instanceof ItemVehicle==false)	return -1;
 				if(i1 instanceof ItemVehicle==false && i2 instanceof ItemVehicle)	return 1;
@@ -134,10 +128,7 @@ public class CreativeTabFlan extends CreativeTabs
 				return s1.compareTo(s2);
 			}
 		};
-		try
-		{
-			Collections.sort(list, cmp);
-		}
+		try { Collections.sort(list, cmp); }
 		catch(Exception e)
 		{
 //			e.printStackTrace();

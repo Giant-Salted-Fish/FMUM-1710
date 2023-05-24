@@ -1,11 +1,45 @@
 package com.flansmod.common.driveables;
 
-import io.netty.buffer.ByteBuf;
-
 import java.util.ArrayList;
 
-import org.lwjgl.opengl.GL11;
+import com.flansmod.api.IControllable;
+import com.flansmod.api.IExplodeable;
+import com.flansmod.client.EntityCamera;
+import com.flansmod.client.FlansModClient;
+import com.flansmod.client.debug.EntityDebugVector;
+import com.flansmod.common.FlansMod;
+import com.flansmod.common.RotatedAxes;
+import com.flansmod.common.driveables.DriveableType.ParticleEmitter;
+import com.flansmod.common.driveables.DriveableType.ShootParticle;
+import com.flansmod.common.driveables.collisions.CollisionPlane;
+import com.flansmod.common.driveables.collisions.CollisionShapeBox;
+import com.flansmod.common.driveables.collisions.CollisionTest;
+import com.flansmod.common.driveables.mechas.EntityMecha;
+import com.flansmod.common.guns.EntityBullet;
+import com.flansmod.common.guns.EntityDamageSourceGun;
+import com.flansmod.common.guns.EntityShootable;
+import com.flansmod.common.guns.GunType;
+import com.flansmod.common.guns.GunType.FireMode;
+import com.flansmod.common.guns.InventoryHelper;
+import com.flansmod.common.guns.ItemBullet;
+import com.flansmod.common.guns.ItemShootable;
+import com.flansmod.common.guns.raytracing.BulletHit;
+import com.flansmod.common.guns.raytracing.DriveableHit;
+import com.flansmod.common.network.PacketDriveableDamage;
+import com.flansmod.common.network.PacketDriveableKeyHeld;
+import com.flansmod.common.network.PacketParticle;
+import com.flansmod.common.network.PacketPlaySound;
+import com.flansmod.common.parts.ItemPart;
+import com.flansmod.common.parts.PartType;
+import com.flansmod.common.teams.TeamsManager;
+import com.flansmod.common.vector.Vector3f;
 
+import cofh.api.energy.IEnergyContainerItem;
+import cpw.mods.fml.common.network.ByteBufUtils;
+import cpw.mods.fml.common.registry.IEntityAdditionalSpawnData;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
+import io.netty.buffer.ByteBuf;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.Entity;
@@ -28,55 +62,10 @@ import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.MovingObjectPosition.MovingObjectType;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
-import net.minecraftforge.event.entity.living.LivingEvent.LivingUpdateEvent;
-import cofh.api.energy.IEnergyContainerItem;
-
-import com.flansmod.api.IControllable;
-import com.flansmod.api.IExplodeable;
-import com.flansmod.client.EntityCamera;
-import com.flansmod.client.FlansModClient;
-import com.flansmod.client.debug.EntityDebugVector;
-import com.flansmod.common.FlansMod;
-import com.flansmod.common.RotatedAxes;
-import com.flansmod.common.driveables.DriveableType.ParticleEmitter;
-import com.flansmod.common.driveables.DriveableType.ShootParticle;
-import com.flansmod.common.driveables.collisions.CollisionPlane;
-import com.flansmod.common.driveables.collisions.CollisionShapeBox;
-import com.flansmod.common.driveables.collisions.CollisionTest;
-import com.flansmod.common.driveables.collisions.RidingEntityPosition;
-import com.flansmod.common.driveables.mechas.EntityMecha;
-import com.flansmod.common.guns.EntityBullet;
-import com.flansmod.common.guns.EntityDamageSourceGun;
-import com.flansmod.common.guns.EntityShootable;
-import com.flansmod.common.guns.EnumFireMode;
-import com.flansmod.common.guns.GunType;
-import com.flansmod.common.guns.InventoryHelper;
-import com.flansmod.common.guns.ItemBullet;
-import com.flansmod.common.guns.ItemShootable;
-import com.flansmod.common.guns.ShootableType;
-import com.flansmod.common.guns.raytracing.BulletHit;
-import com.flansmod.common.guns.raytracing.DriveableHit;
-import com.flansmod.common.network.PacketDriveableDamage;
-import com.flansmod.common.network.PacketDriveableKeyHeld;
-import com.flansmod.common.network.PacketParticle;
-import com.flansmod.common.network.PacketPlaySound;
-import com.flansmod.common.parts.ItemPart;
-import com.flansmod.common.parts.PartType;
-import com.flansmod.common.teams.TeamsManager;
-import com.flansmod.common.tools.ItemTool;
-import com.flansmod.common.types.InfoType;
-import com.flansmod.common.vector.Vector3f;
-
-import cpw.mods.fml.common.eventhandler.SubscribeEvent;
-import cpw.mods.fml.common.gameevent.TickEvent.PlayerTickEvent;
-import cpw.mods.fml.common.network.ByteBufUtils;
-import cpw.mods.fml.common.registry.IEntityAdditionalSpawnData;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
 
 public abstract class EntityDriveable extends Entity implements IControllable, IExplodeable, IEntityAdditionalSpawnData
 {
-	//I’m Rick Harrison, and this is my pawn shop. I work here with my old man and my son, Big Hoss. Everything in here has a story and a price. One thing I’ve learned after 21 years – you never know WHAT is gonna come through that doo
+	//I Rick Harrison, and this is my pawn shop. I work here with my old man and my son, Big Hoss. Everything in here has a story and a price. One thing Ie learned after 21 years you never know WHAT is gonna come through that doo
 	public boolean syncFromServer = true;
 	/** Ticks since last server update. Use to smoothly transition to new position */
 	public int serverPositionTransitionTicker;
@@ -618,12 +607,12 @@ public abstract class EntityDriveable extends Entity implements IControllable, I
 	@Override
 	public boolean pressKey(int key, EntityPlayer player)
 	{
-		if(!worldObj.isRemote && key == 9 && getDriveableType().modePrimary == EnumFireMode.SEMIAUTO) //Primary
+		if(!worldObj.isRemote && key == 9 && getDriveableType().modePrimary == FireMode.SEMI_AUTO) //Primary
 		{
 			shoot(false);
 			return true;
 		}
-		else if(!worldObj.isRemote && key == 8 && getDriveableType().modeSecondary == EnumFireMode.SEMIAUTO) //Secondary
+		else if(!worldObj.isRemote && key == 8 && getDriveableType().modeSecondary == FireMode.SEMI_AUTO) //Secondary
 		{
 			shoot(true);
 			return true;
@@ -763,40 +752,36 @@ public abstract class EntityDriveable extends Entity implements IControllable, I
 			shellSpeed = type.bulletSpeed;
 			ItemStack bulletItemStack = driveableData.ammo[getDriveableType().numPassengerGunners + currentGun];
 			//Check that neither is null and that the bullet item is actually a bullet
-			if(gunType != null && bulletItemStack != null && bulletItemStack.getItem() instanceof ItemShootable && TeamsManager.bulletsEnabled)
+			if(gunType != null && gunType.isValidAmmo(bulletItemStack) && TeamsManager.bulletsEnabled)
 			{
-				ShootableType bullet = ((ItemShootable)bulletItemStack.getItem()).type;
-				if(gunType.isAmmo(bullet))
-				{
-					//spawnParticle(gunType, Vector3f.add(gunVec, new Vector3f((float)posX, (float)posY,V (float)posZ), null));
+				//spawnParticle(gunType, Vector3f.add(gunVec, new Vector3f((float)posX, (float)posY,V (float)posZ), null));
 
-					spawnParticle(type.shootParticle(secondary), shootPoint, gunVec);
-					//Spawn a new bullet item
-					worldObj.spawnEntityInWorld(((ItemShootable)bulletItemStack.getItem()).getEntity(worldObj, Vector3f.add(new Vector3f(posX, posY, posZ), gunVec, null), lookVector, (EntityLivingBase)seats[0].riddenByEntity, gunType.bulletSpread / 2, gunType.damage, shellSpeed,bulletItemStack.getItemDamage(), type));
-					//Play the shoot sound
-					PacketPlaySound.sendSoundPacket(posX, posY, posZ, FlansMod.soundRange, dimension, type.shootSound(secondary), false);
-					//Get the bullet item damage and increment it
-					int damage = bulletItemStack.getItemDamage();
-					bulletItemStack.setItemDamage(damage + 1);
-					//If the bullet item is completely damaged (empty)
-					if(damage + 1 == bulletItemStack.getMaxDamage())
+				spawnParticle(type.shootParticle(secondary), shootPoint, gunVec);
+				//Spawn a new bullet item
+				worldObj.spawnEntityInWorld(((ItemShootable)bulletItemStack.getItem()).getEntity(worldObj, Vector3f.add(new Vector3f(posX, posY, posZ), gunVec, null), lookVector, (EntityLivingBase)seats[0].riddenByEntity, gunType.bulletSpread / 2, gunType.damage, shellSpeed,bulletItemStack.getItemDamage(), type));
+				//Play the shoot sound
+				PacketPlaySound.sendSoundPacket(posX, posY, posZ, FlansMod.soundRange, dimension, type.shootSound(secondary), false);
+				//Get the bullet item damage and increment it
+				int damage = bulletItemStack.getItemDamage();
+				bulletItemStack.setItemDamage(damage + 1);
+				//If the bullet item is completely damaged (empty)
+				if(damage + 1 == bulletItemStack.getMaxDamage())
+				{
+					//Set the damage to 0 and consume one ammo item (unless in creative)
+					bulletItemStack.setItemDamage(0);
+					if(!driverIsCreative())
 					{
-						//Set the damage to 0 and consume one ammo item (unless in creative)
-						bulletItemStack.setItemDamage(0);
-						if(!driverIsCreative())
+						bulletItemStack.stackSize--;
+						if(bulletItemStack.stackSize <= 0)
 						{
-							bulletItemStack.stackSize--;
-							if(bulletItemStack.stackSize <= 0)
-							{
-								onWeaponInventoryChanged(secondary);
-								bulletItemStack = null;
-							}
-							driveableData.setInventorySlotContents(getDriveableType().numPassengerGunners + currentGun, bulletItemStack);
+							onWeaponInventoryChanged(secondary);
+							bulletItemStack = null;
 						}
+						driveableData.setInventorySlotContents(getDriveableType().numPassengerGunners + currentGun, bulletItemStack);
 					}
-					//Reset the shoot delay
-					setShootDelay(type.shootDelay(secondary), secondary);
 				}
+				//Reset the shoot delay
+				setShootDelay(type.shootDelay(secondary), secondary);
 			}
 		}
 		else //One of the other modes
@@ -1482,19 +1467,19 @@ public abstract class EntityDriveable extends Entity implements IControllable, I
 		}
 		if(!worldObj.isRemote)
 		{
-			if(leftMouseHeld && getDriveableType().modePrimary == EnumFireMode.FULLAUTO)
+			if(leftMouseHeld && getDriveableType().modePrimary == FireMode.FULL_AUTO)
 				shoot(false);
-			if(rightMouseHeld && getDriveableType().modeSecondary == EnumFireMode.FULLAUTO)
+			if(rightMouseHeld && getDriveableType().modeSecondary == FireMode.FULL_AUTO)
 				shoot(true);
 			minigunSpeedPrimary *= 0.9F;
 			minigunSpeedSecondary *= 0.9F;
-			if(leftMouseHeld && getDriveableType().modePrimary == EnumFireMode.MINIGUN)
+			if(leftMouseHeld && getDriveableType().modePrimary == FireMode.MINIGUN)
 			{
 				minigunSpeedPrimary += 0.1F;
 				if(minigunSpeedPrimary > 1F)
 					shoot(false);
 			}
-			if(rightMouseHeld && getDriveableType().modeSecondary == EnumFireMode.MINIGUN)
+			if(rightMouseHeld && getDriveableType().modeSecondary == FireMode.MINIGUN)
 			{
 				minigunSpeedSecondary += 0.1F;
 				if(minigunSpeedSecondary > 1F)
@@ -2056,7 +2041,7 @@ public abstract class EntityDriveable extends Entity implements IControllable, I
 		if(finalPos == null) 
 		{
 			finalPos = new Vector3f(0,0,0);
-			if(FlansMod.debugMode) FlansMod.log("EntityDriveable.java moveRiders> finalPos is null [1]");
+			if(FlansMod.DEBUG) FlansMod.log("EntityDriveable.java moveRiders> finalPos is null [1]");
 		}
 		
 		if(rider instanceof EntityAnimal) return;
@@ -2067,7 +2052,7 @@ public abstract class EntityDriveable extends Entity implements IControllable, I
 		if(finalPos == null) 
 		{
 			finalPos = new Vector3f(0,0,0);
-			if(FlansMod.debugMode) FlansMod.log("EntityDriveable.java moveRiders> finalPos is null [2]");
+			if(FlansMod.DEBUG) FlansMod.log("EntityDriveable.java moveRiders> finalPos is null [2]");
 		}
 		Vector3f diff = Vector3f.sub(finalPos, vehiclePos, null);
 		
@@ -2525,7 +2510,7 @@ public abstract class EntityDriveable extends Entity implements IControllable, I
 		if(diff == null) 
 		{
 			diff = new Vector3f(0,0,0);
-			if(FlansMod.debugMode) FlansMod.log("EntityDriveable.java updateRidarPos> diff is null [1]");
+			if(FlansMod.DEBUG) FlansMod.log("EntityDriveable.java updateRidarPos> diff is null [1]");
 		}
 		
 		Vector3f.add(vehicleMotion, diff, diff);

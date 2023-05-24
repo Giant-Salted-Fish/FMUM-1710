@@ -1,29 +1,9 @@
 package com.flansmod.common.tools;
 
-import java.math.BigInteger;
-import java.security.SecureRandom;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
-
-import net.minecraft.client.renderer.texture.IIconRegister;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemFood;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.AxisAlignedBB;
-import net.minecraft.util.ChatComponentText;
-import net.minecraft.util.MathHelper;
-import net.minecraft.util.MovingObjectPosition;
-import net.minecraft.util.Vec3;
-import net.minecraft.world.World;
-import cpw.mods.fml.common.network.NetworkRegistry;
-import cpw.mods.fml.common.registry.GameRegistry;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
 
 import com.flansmod.client.debug.EntityDebugVector;
 import com.flansmod.common.FlansMod;
@@ -31,10 +11,25 @@ import com.flansmod.common.PlayerData;
 import com.flansmod.common.PlayerHandler;
 import com.flansmod.common.driveables.DriveablePart;
 import com.flansmod.common.driveables.EntityDriveable;
-import com.flansmod.common.driveables.DriveableType.ShootParticle;
 import com.flansmod.common.guns.EntityGrenade;
 import com.flansmod.common.network.PacketFlak;
 import com.flansmod.common.vector.Vector3f;
+
+import cpw.mods.fml.common.network.NetworkRegistry;
+import cpw.mods.fml.common.registry.GameRegistry;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraft.client.renderer.texture.IIconRegister;
+import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemFood;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.util.MathHelper;
+import net.minecraft.util.MovingObjectPosition;
+import net.minecraft.util.Vec3;
+import net.minecraft.world.World;
 
 public class ItemTool extends ItemFood 
 {
@@ -43,14 +38,12 @@ public class ItemTool extends ItemFood
     private static final String CHAR_LIST = 
             "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
     private static final int RANDOM_STRING_LENGTH = 10;
-
-
+    
     public ItemTool(ToolType t)
     {
     	super(t.foodness, false);
         maxStackSize = 1;
-		type = t;
-		type.item = this;
+		(type = t).item = this;
 		setMaxDamage(type.toolLife);
 		if(type.foodness == 0)
 		{
@@ -66,45 +59,31 @@ public class ItemTool extends ItemFood
 	@Override
 	public void addInformation(ItemStack stack, EntityPlayer player, List lines, boolean b)
 	{
-		if(!type.packName.isEmpty())
-		{
-			lines.add(type.packName);
-		}
-		if(type.description != null)
-		{
-            Collections.addAll(lines, type.description.split("_"));
-		}
-		if(stack.stackTagCompound != null){
-			lines.add(stack.stackTagCompound.getString("key"));
-		}
+		if(!type.packName.isEmpty()) lines.add(type.packName);
+		if(type.description != null)  Collections.addAll(lines, type.description.split("_"));
+		if(stack.stackTagCompound != null) lines.add(stack.stackTagCompound.getString("key"));
 	}
 	
-	
-	public void onCreated(ItemStack itemStack, World world, EntityPlayer player) {
+	@Override
+	public void onCreated(ItemStack itemStack, World world, EntityPlayer player)
+	{
 	    itemStack.stackTagCompound = new NBTTagCompound();
 	    itemStack.stackTagCompound.setString("key", generateRandomString());
 	}
     
     @Override
 	@SideOnly(Side.CLIENT)
-    public int getColorFromItemStack(ItemStack par1ItemStack, int par2)
-    {
-    	return type.colour;
-    }
+    public int getColorFromItemStack(ItemStack par1ItemStack, int par2) { return type.colour; }
 	
     @Override
     @SideOnly(Side.CLIENT)
-    public void registerIcons(IIconRegister icon) 
-    {
-    	itemIcon = icon.registerIcon("FlansMod:" + type.iconPath);
-    }
+    public void registerIcons(IIconRegister icon) { itemIcon = icon.registerIcon("FlansMod:" + type.iconPath); }
     
 	@Override
     public ItemStack onItemRightClick(ItemStack itemstack, World world, EntityPlayer entityplayer)
     {
 		if(type.foodness > 0)
 			super.onItemRightClick(itemstack, world, entityplayer);
-		
 		else if(type.parachute)
 		{
 			if(EntityParachute.canUseParachute(entityplayer))
@@ -130,7 +109,6 @@ public class ItemTool extends ItemFood
 			//Our work here is done. Let's be off
 			return itemstack;
 		}
-		
 		else if(type.remote)
 		{
 			PlayerData data = PlayerHandler.getPlayerData(entityplayer, world.isRemote ? Side.CLIENT : Side.SERVER);
@@ -214,7 +192,6 @@ public class ItemTool extends ItemFood
 					}
 				}
 	        }
-	
 	        if(!world.isRemote && type.healPlayers)
 	        {
 	        	//By default, heal the player
@@ -255,7 +232,8 @@ public class ItemTool extends ItemFood
 						itemstack.stackSize--;
 		        }
 	        }
-	        if(!world.isRemote && type.key){
+	        if(!world.isRemote && type.key)
+	        {
 				for(int i = 0; i < world.loadedEntityList.size(); i++)
 				{
 					Object obj = world.loadedEntityList.get(i);

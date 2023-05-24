@@ -4,7 +4,6 @@ import java.util.ArrayList;
 
 import com.flansmod.common.RotatedAxes;
 import com.flansmod.common.vector.Vector3f;
-import com.flansmod.client.model.animation.PoseComponent;
 
 public class AnimationController 
 {
@@ -447,7 +446,7 @@ public class AnimationController
 		RotatedAxes rot = new RotatedAxes(0,0,0);
 		ArrayList<Integer> chain = new ArrayList<Integer>();
 		chain = generateChain(p, chain);
-		for(int i = chain.size() - 1; i > 0; i--)
+		for(int i = chain.size(); --i > 0; )
 		{
 			AnimationPart child = parts.get(chain.get(i-1));
 			AnimationPart part = parts.get(chain.get(i));		

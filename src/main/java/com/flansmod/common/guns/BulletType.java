@@ -3,16 +3,17 @@ package com.flansmod.common.guns;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.minecraft.client.model.ModelBase;
-import net.minecraft.item.Item;
-import net.minecraft.potion.PotionEffect;
-
 import com.flansmod.common.FlansMod;
 import com.flansmod.common.driveables.EnumWeaponType;
 import com.flansmod.common.types.TypeFile;
 
+import net.minecraft.item.Item;
+import net.minecraft.potion.PotionEffect;
+
 public class BulletType extends ShootableType
 {
+	/** damage multiplier when this bullet can't penetrate player's armor */
+	public float bluntDamageMult = 1F;
 	/** The number of flak particles to spawn upon exploding */
 	public int flak = 0;
 	/** The type of flak particles to spawn */
@@ -42,7 +43,7 @@ public class BulletType extends ShootableType
 	public boolean entityHitSoundEnable = false;
 
 	public boolean hasLight = false;
-	public float penetratingPower = 1F;
+	public float penetratingPower = 1F, armorBreakPower = 0F, minPenetrationLevel = 0F, maxPenetrationLevel = 0F;
 	/** Lock on variables. If true, then the bullet will search for a target at the moment it is fired */
 	public boolean lockOnToPlanes = false, lockOnToVehicles = false, lockOnToMechas = false, lockOnToPlayers = false, lockOnToLivings = false;
 	/** Lock on maximum angle for finding a target */
@@ -63,10 +64,10 @@ public class BulletType extends ShootableType
 
 	public ArrayList<PotionEffect> hitEffects = new ArrayList<PotionEffect>();
 
-	/** Number of bullets to fire per shot if allowNumBulletsByBulletType = true */
-	public int numBullets = -1;
-	/** Ammo based spread setting if allowSpreadByBullet = true */
-	public float bulletSpread = -1;
+	/** Number of bullets to fire per shot */
+	public int numBullets = 1;
+	/** Gun Aiming Spread = gun spread * bulletSpreadMultiplier */
+	public float bulletSpreadMultiplier = 1F, aimingBulletSpreadMultiplier = 1F;
 
 	public float dragInAir   = 0.99F;
 	public float dragInWater = 0.80F;
@@ -137,27 +138,48 @@ public class BulletType extends ShootableType
 			}
 			else if(split[0].equals("HitSoundRange"))
 				hitSoundRange = Float.parseFloat(split[1]);
-			else if(split[0].equals("Penetrates"))
-				penetratingPower = (Boolean.parseBoolean(split[1].toLowerCase()) ? 1F : 0.25F);
 			else if(split[0].equals("Penetration") || split[0].equals("PenetratingPower"))
 				penetratingPower = Float.parseFloat(split[1]);
+			else if(split[0].equals("BluntDamageMult"))
+				bluntDamageMult = Float.parseFloat(split[1]);
+			else if(split[0].equals("ArmorBreakPower"))
+				armorBreakPower = Float.parseFloat(split[1]);
+			else if(split[0].equals("PenetrationLevel"))
+			{
+				maxPenetrationLevel = Float.parseFloat(split[1]);
+				if(split.length > 2)
+				{
+					minPenetrationLevel = Float.parseFloat(split[2]);
+					if(minPenetrationLevel > maxPenetrationLevel)
+					{
+						float smaller = maxPenetrationLevel;
+						maxPenetrationLevel = minPenetrationLevel;
+						minPenetrationLevel = smaller;
+					}
+				}
+				else
+					minPenetrationLevel = maxPenetrationLevel;
+			}
 
 			else if(split[0].equals("DragInAir"))
 			{
 				dragInAir = Float.parseFloat(split[1]);
-				dragInAir = dragInAir<0? 0: dragInAir>1? 1: dragInAir;
+				dragInAir = dragInAir < 0 ? 0 : dragInAir > 1 ? 1 : dragInAir;
 			}
 			else if(split[0].equals("DragInWater"))
 			{
 				dragInWater = Float.parseFloat(split[1]);
-				dragInWater = dragInWater<0? 0: dragInWater>1? 1: dragInWater;
+				dragInWater = dragInWater < 0 ? 0: dragInWater > 1 ? 1 : dragInWater;
 			}
 
 			else if(split[0].equals("NumBullets"))
 				numBullets = Integer.parseInt(split[1]);
-			else if(split[0].equals("Accuracy") || split[0].equals("Spread"))
-				bulletSpread = Float.parseFloat(split[1]);
-
+			else if(split[0].equals("SpreadMultiplier"))
+			{
+				aimingBulletSpreadMultiplier = Float.parseFloat(split[1]);
+				if(split.length > 2)
+					bulletSpreadMultiplier = Float.parseFloat(split[2]);
+			}
 			else if(split[0].equals("LivingProximityTrigger"))
 				livingProximityTrigger = Float.parseFloat(split[1]);
 			else if(split[0].equals("VehicleProximityTrigger"))
@@ -254,37 +276,22 @@ public class BulletType extends ShootableType
 		}
 		catch (Exception e)
 		{
-			System.out.println("Reading bullet file failed.");
-			if(FlansMod.printStackTrace)
-			{
-				e.printStackTrace();
-			}
+			String line = split[0];
+			for(int i = 1; i < split.length; ++i) line += " " + split[i];
+			FlansMod.log("error > failed to parse key word <" + line + "> for bullet <" + shortName + ">");
+			if(FlansMod.printStackTrace) e.printStackTrace();
 		}
 	}
 
 	public static BulletType getBullet(String s)
 	{
-		for(BulletType bullet : bullets)
-		{
-			if(bullet.shortName.equals(s))
-				return bullet;
-		}
+		for(BulletType bullet : bullets) if(bullet.shortName.equals(s)) return bullet;
 		return null;
 	}
 
 	public static BulletType getBullet(Item item)
 	{
-		for(BulletType bullet : bullets)
-		{
-			if(bullet.item == item)
-				return bullet;
-		}
+		for(BulletType bullet : bullets) if(bullet.item == item) return bullet;
 		return null;
-	}
-
-	/** To be overriden by subtypes for model reloading */
-	public void reloadModel()
-	{
-		model = FlansMod.proxy.loadModel(modelString, shortName, ModelBase.class);
 	}
 }

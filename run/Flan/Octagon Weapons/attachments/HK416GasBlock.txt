@@ -1,0 +1,11 @@
+// Naming
+Name H&K416 Gas Block
+ShortName HK416GasBlock
+Category HK416GasBlock
+
+// Visual
+Icon HK416D10RS
+Model oc.ModelOCGun:HK416GasBlock skins/HK416D10RS.png 0.1
+
+// Attributes
+AttachableSlots 14 4.5 C[ HK416FrontSight ] | 0 6 C[ HK416Piston ]

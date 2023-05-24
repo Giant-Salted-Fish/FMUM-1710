@@ -1,15 +1,13 @@
 package com.flansmod.common.network;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandlerContext;
-
-import net.minecraft.item.ItemStack;
-
-import cpw.mods.fml.common.network.ByteBufUtils;
-
 import com.flansmod.common.driveables.EntityDriveable;
 import com.flansmod.common.driveables.mechas.EntityMecha;
 import com.flansmod.common.driveables.mechas.EnumMechaSlotType;
+
+import cpw.mods.fml.common.network.ByteBufUtils;
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandlerContext;
+import net.minecraft.item.ItemStack;
 
 public class PacketMechaControl extends PacketDriveableControl 
 {

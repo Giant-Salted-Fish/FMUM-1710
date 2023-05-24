@@ -1,0 +1,11 @@
+// Naming
+Name H&K416 Pistol Grip
+ShortName HK416PistolGrip
+Category ARPistolGrip
+
+// Visual
+Icon HK416D10RS
+Model oc.ModelOCGun:HK416PistolGrip skins/HK416D10RS.png 0.1
+
+// Attributes
+RightHandPriority 0

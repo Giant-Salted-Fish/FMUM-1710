@@ -1,0 +1,10 @@
+// Naming
+Name H&K416 Receiver Extension Nut
+ShortName HK416ReceiverExtensionNut
+Category ARReceiverExtensionNut
+
+// Visual
+Icon HK416D10RS
+Model oc.ModelOCGun:HK416ReceiverExtensionNut skins/HK416D10RS.png 0.1
+
+// Attributes

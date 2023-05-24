@@ -1,0 +1,11 @@
+// Naming
+Name CIC WTS-36 Upper Picatinny Rail
+ShortName CICWTS36UpperPicatinnyRail
+Category CICWTS36UpperPicatinnyRail
+
+// Visual
+Icon HK416D10RS
+Model oc.ModelOCGun:CICWTS36UpperPicatinnyRail skins/CICWTS36C.png 0.1
+
+// Attributes
+AttachableSlots -15 8 0 0 4 28 8 C[ PRA ]

@@ -1,10 +1,5 @@
 package com.flansmod.common.eventhandlers;
 
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.entity.living.LivingDeathEvent;
-
 import com.flansmod.common.FlansMod;
 import com.flansmod.common.PlayerHandler;
 import com.flansmod.common.guns.EntityBullet;
@@ -15,8 +10,13 @@ import com.flansmod.common.types.InfoType;
 
 import cpw.mods.fml.common.Mod.EventHandler;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.entity.living.LivingDeathEvent;
 
-public class PlayerDeathEventListener {
+public class PlayerDeathEventListener
+{
 
 	public PlayerDeathEventListener()
 	{
@@ -67,17 +67,23 @@ public class PlayerDeathEventListener {
 
 			if(killed.getCurrentArmor(2) != null) {
 				System.out.println("KilledPlayer:" + killed + " wear a " + killed.getCurrentArmor(2).getUnlocalizedName());
-			} else {
+			}
+			else
+			{
 				System.out.println("KilledPlayer:" + killed + " wear nothing.");
 			}
 
-			if(killer.getCurrentArmor(2) != null) {
+			if(killer.getCurrentArmor(2) != null)
+			{
 				System.out.println("Killer:" + killer + " wear a " + killer.getCurrentArmor(2).getUnlocalizedName());
-			} else {
+			}
+			else
+			{
 				System.out.println("Killer:" + killer + " wear nothing.");
 			}
 
-			if(killed.ticksExisted / 20 < FlansMod.noticeSpawnKillTime) {
+			if(killed.ticksExisted / 20 < FlansMod.noticeSpawnKillTime)
+			{
 				System.out.println("Warning! PlayerName:" + killer.getCommandSenderName() + " may do SPAWN KILL. Time:" + killed.ticksExisted / 20 + " " + killed.getCommandSenderName() + " was killed.");
 			}
 			// System.out.println(killed.getCurrentArmor(2));

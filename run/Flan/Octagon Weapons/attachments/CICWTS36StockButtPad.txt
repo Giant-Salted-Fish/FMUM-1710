@@ -1,0 +1,10 @@
+// Naming
+Name CIC WTS-36 Stock Butt-Pad
+ShortName CICWTS36StockButtPad
+Category CICWTS36StockButtPad
+
+// Visual
+Icon CICWTS36C
+Model oc.ModelOCGun:CICWTS36StockButtPad skins/CICWTS36C.png 0.1
+
+// Attributes

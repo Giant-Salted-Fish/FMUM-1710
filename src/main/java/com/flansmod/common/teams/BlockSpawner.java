@@ -2,6 +2,11 @@ package com.flansmod.common.teams;
 
 import java.util.List;
 
+import com.flansmod.client.FlansModClient;
+import com.flansmod.common.FlansMod;
+
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.block.BlockContainer;
 import net.minecraft.block.BlockFence;
 import net.minecraft.block.material.Material;
@@ -18,11 +23,6 @@ import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.IIcon;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
-
-import com.flansmod.client.FlansModClient;
-import com.flansmod.common.FlansMod;
 
 public class BlockSpawner extends BlockContainer 
 {

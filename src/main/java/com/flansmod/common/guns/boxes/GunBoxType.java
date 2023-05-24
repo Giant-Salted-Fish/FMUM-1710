@@ -5,18 +5,18 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
+import com.flansmod.common.FlansMod;
+import com.flansmod.common.types.InfoType;
+import com.flansmod.common.types.TypeFile;
+
+import cpw.mods.fml.common.registry.GameRegistry;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.block.Block;
 import net.minecraft.client.model.ModelBase;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.IIcon;
-import cpw.mods.fml.common.registry.GameRegistry;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
-
-import com.flansmod.common.FlansMod;
-import com.flansmod.common.types.InfoType;
-import com.flansmod.common.types.TypeFile;
 
 public class GunBoxType extends InfoType
 {
@@ -77,39 +77,38 @@ public class GunBoxType extends InfoType
 		super.read(split, file);
 		try
 		{
-			if (split[0].equals("TopTexture"))
+			if(split[0].equals("TopTexture"))
 				topTexturePath = split[1];
-			if (split[0].equals("BottomTexture"))
+			if(split[0].equals("BottomTexture"))
 				bottomTexturePath = split[1];
-			if (split[0].equals("SideTexture"))
+			if(split[0].equals("SideTexture"))
 				sideTexturePath = split[1];
-			if (split[0].equals("Page") || split[0].equals("SetPage"))
+			if(split[0].equals("Page") || split[0].equals("SetPage"))
 			{
 				//If empty, rename the page. If not, add the current page to list and start next one.
 				String[] pageNameArray = Arrays.copyOfRange(split, 1, split.length);
 				String pageName = "";
+				//get page name
 				for(int i = 0; i < pageNameArray.length; i++)
 				{
 				    pageName += pageNameArray[i];
+					//add blank spaces for the page name
 				    if((i + 1) < pageNameArray.length)
-				    {
 				        pageName += " ";
-				    }
 				}
+				//we started a new page, so if there is any guns that haven't been added to previous page, then add them and set a new current page
 				if(gunEntries[0] != null)
 				{
 					currentPage.addGunList(Arrays.copyOf(gunEntries, nextGun + 1));
-					iteratePage(pageName);
+					iteratePage(pageName); //finish the last page and set a new page names "pageName"
 				}
-				else
-				{
+				else //no gun left for previous page, then just create a new page
 					currentPage.setPageName(pageName);
-				}
-
 			}
 			if (split[0].equals("AddGun"))
 			{
 				nextGun++;
+				//if current page is full, add all existed guns to the current page and create a new page
 				if(nextGun > gunEntries.length - 1)
 				{
 					currentPage.addGunList(Arrays.copyOf(gunEntries, nextGun));
@@ -136,12 +135,13 @@ public class GunBoxType extends InfoType
 				buttonTextColor = split[1];
 			if(split[0].equals("ButtonTextHighlight"))
 				buttonTextHoverColor = split[1];
-
 		}
 		catch (Exception e)
 		{
-			FlansMod.log("Reading gun box file failed : " + shortName);
-			e.printStackTrace();
+			String line = split[0];
+			for(int i = 1; i < split.length; ++i) line += " " + split[i];
+			FlansMod.log("error > failed to parse key word <" + line + "> for gun box <" + shortName + ">");
+			if(FlansMod.printStackTrace) e.printStackTrace();
 		}
 	}
 
@@ -176,7 +176,7 @@ public class GunBoxType extends InfoType
 
 		for (int i = 0; i < (split.length - 2) / 2; i++)
 		{
-			if (split[i * 2 + 3].contains("."))
+			if(split[i * 2 + 3].contains("."))
 				recipe.add(getRecipeElement(split[i * 2 + 3].split("\\.")[0], Integer.parseInt(split[i * 2 + 2]), Integer.valueOf(split[i * 2 + 3].split("\\.")[1]), shortName));
 			else
 				recipe.add(getRecipeElement(split[i * 2 + 3], Integer.parseInt(split[i * 2 + 2]), 0, shortName));
@@ -189,15 +189,16 @@ public class GunBoxType extends InfoType
 	@Override
 	public void addRecipe(Item par1Item)
 	{
-		if (smeltableFrom != null)
-		{
+		if(smeltableFrom != null)
 			GameRegistry.addSmelting(getRecipeElement(smeltableFrom, 0), new ItemStack(item), 0.0F);
-		}
-		if (recipeLine == null)
+		//no recipe, return
+		if(recipeLine == null)
 			return;
+		
 		try
 		{
-			if (!shapeless)
+			//if not shapeless
+			if(!shapeless)
 			{
 				// Fix oversized recipes
 				int rows = 3;
@@ -215,20 +216,20 @@ public class GunBoxType extends InfoType
 				}
 				// Last column
 				int last = ((String) recipe[0]).length() - 1;
-				if (((String) recipe[0]).charAt(last) == ' ' && ((String) recipe[1]).charAt(last) == ' ' && ((String) recipe[2]).charAt(last) == ' ')
+				if(((String) recipe[0]).charAt(last) == ' ' && ((String) recipe[1]).charAt(last) == ' ' && ((String) recipe[2]).charAt(last) == ' ')
 				{
-					for (int i = 0; i < 3; i++)
+					for(int i = 0; i < 3; i++)
 						recipe[i] = ((String) recipe[i]).substring(0, last);
 					// New last column
 					last--;
-					if (((String) recipe[0]).charAt(last) == ' ' && ((String) recipe[1]).charAt(last) == ' ' && ((String) recipe[2]).charAt(last) == ' ')
+					if(((String) recipe[0]).charAt(last) == ' ' && ((String) recipe[1]).charAt(last) == ' ' && ((String) recipe[2]).charAt(last) == ' ')
 					{
 						for (int i = 0; i < 3; i++)
 							recipe[i] = ((String) recipe[i]).substring(0, 0);
 					}
 				}
 				// Top row
-				if (recipe[0].equals(" ") || recipe[0].equals("  ") || recipe[0].equals("   "))
+				if(recipe[0].equals(" ") || recipe[0].equals("  ") || recipe[0].equals("   "))
 				{
 					Object[] newRecipe = new Object[recipe.length - 1];
 					newRecipe[0] = recipe[1];
@@ -236,7 +237,7 @@ public class GunBoxType extends InfoType
 					recipe = newRecipe;
 					rows--;
 					// Next top row
-					if (recipe[0].equals(" ") || recipe[0].equals("  ") || recipe[0].equals("   "))
+					if(recipe[0].equals(" ") || recipe[0].equals("  ") || recipe[0].equals("   "))
 					{
 						Object[] newRecipe1 = new Object[recipe.length - 1];
 						newRecipe1[0] = recipe[1];
@@ -245,7 +246,7 @@ public class GunBoxType extends InfoType
 					}
 				}
 				// Bottom row
-				if (recipe[rows - 1].equals(" ") || recipe[rows - 1].equals("  ") || recipe[rows - 1].equals("   "))
+				if(recipe[rows - 1].equals(" ") || recipe[rows - 1].equals("  ") || recipe[rows - 1].equals("   "))
 				{
 					Object[] newRecipe = new Object[recipe.length - 1];
 					newRecipe[0] = recipe[0];
@@ -261,12 +262,12 @@ public class GunBoxType extends InfoType
 						rows--;
 					}
 				}
-				for (int i = 0; i < (recipeLine.length - 1) / 2; i++)
+				for(int i = 0; i < (recipeLine.length - 1) / 2; i++)
 				{
 					recipe[i * 2 + rows] = recipeLine[i * 2 + 1].charAt(0);
 					// Split ID with . and if it contains a second part, use it
 					// as damage value.
-					if (recipeLine[i * 2 + 2].contains("."))
+					if(recipeLine[i * 2 + 2].contains("."))
 						recipe[i * 2 + rows + 1] = getRecipeElement(recipeLine[i * 2 + 2].split("\\.")[0], Integer.valueOf(recipeLine[i * 2 + 2].split("\\.")[1]));
 					else
 						recipe[i * 2 + rows + 1] = getRecipeElement(recipeLine[i * 2 + 2], 0);
@@ -276,9 +277,9 @@ public class GunBoxType extends InfoType
 			else
 			{
 				recipe = new Object[recipeLine.length - 1];
-				for (int i = 0; i < (recipeLine.length - 1); i++)
+				for(int i = 0; i < (recipeLine.length - 1); i++)
 				{
-					if (recipeLine[i + 1].contains("."))
+					if(recipeLine[i + 1].contains("."))
 						recipe[i] = getRecipeElement(recipeLine[i + 1].split("\\.")[0], Integer.valueOf(recipeLine[i + 1].split("\\.")[1]));
 					else
 						recipe[i] = getRecipeElement(recipeLine[i + 1], 0);
@@ -286,9 +287,9 @@ public class GunBoxType extends InfoType
 				GameRegistry.addShapelessRecipe(new ItemStack(block, recipeOutput, 0), recipe);
 			}
 		}
-		catch (Exception e)
+		catch(Exception e)
 		{
-			if(recipe!=null)
+			if(recipe != null)
 			{
 				String msg = " : ";
 				for(Object o : recipe) msg = msg + " " + o;

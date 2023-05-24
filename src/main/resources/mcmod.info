@@ -1,14 +1,14 @@
 [
 {
-  "modid": "examplemod",
-  "name": "Example Mod",
-  "description": "Example placeholder mod.",
+  "modid": "flansmod",
+  "name": "Flan's mod Ultimate 1.1 Modified",
+  "description": "FMUM provides various enhanced functions on guns based on FMU",
   "version": "${version}",
   "mcversion": "${mcversion}",
-  "url": "",
+  "url": "https://www.curseforge.com/minecraft/mc-mods/flans-mod-ultimate-1-1-modified",
   "updateUrl": "",
-  "authorList": ["ExampleDude"],
-  "credits": "The Forge and FML guys, for making this example",
+  "authorList": ["FlansGames", "W44", "vinidamiani126", "Giant_Salted_Fish"],
+  "credits": "",
   "logoFile": "",
   "screenshots": [],
   "dependencies": []

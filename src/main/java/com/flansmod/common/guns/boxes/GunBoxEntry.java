@@ -1,10 +1,11 @@
 package com.flansmod.common.guns.boxes;
 
-import com.flansmod.common.types.InfoType;
-import net.minecraft.item.ItemStack;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import com.flansmod.common.types.InfoType;
+
+import net.minecraft.item.ItemStack;
 
 public class GunBoxEntry
 {
@@ -27,9 +28,9 @@ public class GunBoxEntry
 
     public boolean isAmmoNullOrEmpty()
     {
-        if(ammoEntryList != null && !ammoEntryList.isEmpty())
-            return false;
-        else
+        if(ammoEntryList == null || ammoEntryList.isEmpty())
             return true;
+        else
+            return false;
     }
 }

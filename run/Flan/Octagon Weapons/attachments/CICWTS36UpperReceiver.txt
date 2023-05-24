@@ -1,0 +1,11 @@
+// Naming
+Name CIC WTS-36 Upper Receiver
+ShortName CICWTS36UpperReceiver
+Category CICWTS36UpperReceiver
+
+// Visual
+Icon HK416D10RS
+Model oc.ModelOCGun:CICWTS36UpperReceiver skins/CICWTS36C.png 0.1
+
+// Attributes
+AttachableSlots 69 -4 C[ CICWTS36UpperPicatinnyRail ] | 113 -7 C[ CICWTS36Handguard ] | 113 -3 C[ CICWTS36ChargeHandle ] | 52 -7 C[ CICWTS36Bolt ]

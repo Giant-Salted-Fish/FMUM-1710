@@ -1,9 +1,25 @@
 package com.flansmod.common.guns;
 
-import io.netty.buffer.ByteBuf;
-
 import java.util.List;
 
+import com.flansmod.client.FlansModClient;
+import com.flansmod.common.FlansMod;
+import com.flansmod.common.PlayerHandler;
+import com.flansmod.common.RotatedAxes;
+import com.flansmod.common.driveables.EntityDriveable;
+import com.flansmod.common.network.PacketFlak;
+//import com.flansmod.common.network.PacketFlashBang;
+import com.flansmod.common.network.PacketPlaySound;
+import com.flansmod.common.teams.ItemTeamArmour;
+import com.flansmod.common.teams.Team;
+import com.flansmod.common.teams.TeamsManager;
+import com.flansmod.common.types.InfoType;
+import com.flansmod.common.vector.Vector3f;
+
+import cpw.mods.fml.common.network.ByteBufUtils;
+import cpw.mods.fml.common.network.NetworkRegistry;
+import cpw.mods.fml.common.registry.IEntityAdditionalSpawnData;
+import io.netty.buffer.ByteBuf;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.client.Minecraft;
@@ -22,24 +38,6 @@ import net.minecraft.util.MathHelper;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.MovingObjectPosition.MovingObjectType;
 import net.minecraft.world.World;
-
-import com.flansmod.client.FlansModClient;
-import com.flansmod.common.FlansMod;
-import com.flansmod.common.PlayerHandler;
-import com.flansmod.common.RotatedAxes;
-import com.flansmod.common.driveables.EntityDriveable;
-import com.flansmod.common.network.PacketFlak;
-import com.flansmod.common.network.PacketFlashBang;
-import com.flansmod.common.network.PacketPlaySound;
-import com.flansmod.common.teams.ItemTeamArmour;
-import com.flansmod.common.teams.Team;
-import com.flansmod.common.teams.TeamsManager;
-import com.flansmod.common.types.InfoType;
-import com.flansmod.common.vector.Vector3f;
-
-import cpw.mods.fml.common.network.ByteBufUtils;
-import cpw.mods.fml.common.network.NetworkRegistry;
-import cpw.mods.fml.common.registry.IEntityAdditionalSpawnData;
 
 public class EntityGrenade extends EntityShootable implements IEntityAdditionalSpawnData
 {
@@ -64,17 +62,14 @@ public class EntityGrenade extends EntityShootable implements IEntityAdditionalS
 	public boolean detonated = false;
 	/** For deployable bags */
 	public int numUsesRemaining = 0;
-
+	
 	public boolean isThisStick = false;
 	public Entity stickedEntity;
-
+	
 	public int motionTime = 0;
-
-	public EntityGrenade(World w)
-	{
-		super(w);
-	}
-
+	
+	public EntityGrenade(World w) { super(w); }
+	
 	public EntityGrenade(World w, GrenadeType g, EntityLivingBase t)
 	{
 		this(w);
@@ -83,13 +78,15 @@ public class EntityGrenade extends EntityShootable implements IEntityAdditionalS
 		numUsesRemaining = type.numUses;
 		thrower = t;
 		if(thrower instanceof EntityPlayer && PlayerHandler.getPlayerData((EntityPlayer)thrower) != null)
-		{
 			teamOfThrower = PlayerHandler.getPlayerData((EntityPlayer)thrower).team;
-		}
 		setSize(g.hitBoxSize, g.hitBoxSize);
 		//Set the grenade to be facing the way the player is looking
-		axes.setAngles(t.rotationYaw + 90F, g.spinWhenThrown ? t.rotationPitch : 0F, 0F);
+		//changed here
+		//axes.setAngles(t.rotationYaw + 90F, g.spinWhenThrown ? t.rotationPitch : 0F, 0F);
+		//rotationYaw = prevRotationYaw = g.spinWhenThrown ? t.rotationYaw + 90F : 0F;
+		axes.setAngles(t.rotationYaw + 90F, t.rotationPitch, 0F);
 		rotationYaw = prevRotationYaw = g.spinWhenThrown ? t.rotationYaw + 90F : 0F;
+		//to separate it from the original codes
 		rotationPitch = prevRotationPitch = t.rotationPitch;
 		//Give the grenade velocity in the direction the player is looking
 		float speed = 0.5F * type.throwSpeed;
@@ -97,7 +94,32 @@ public class EntityGrenade extends EntityShootable implements IEntityAdditionalS
 		motionY = axes.getXAxis().y * speed;
 		motionZ = axes.getXAxis().z * speed;
 		if(type.spinWhenThrown)
-			angularVelocity = new Vector3f(0F, 0F, 10F);
+			angularVelocity.set(0F, 0F, 10F);
+		if(type.throwSound != null)
+			PacketPlaySound.sendSoundPacket(posX, posY, posZ, FlansMod.soundRange, dimension, type.throwSound, true);
+	}
+	
+	public EntityGrenade(World world, GrenadeType grenadeType, EntityLivingBase theThrower, float itsSpeed, float x, float y, float z, float roty, float rotz)
+	{
+		this(world);
+		setPosition(x, y, z);
+		type = grenadeType;
+		thrower = theThrower;
+		numUsesRemaining = type.numUses;
+		if(thrower instanceof EntityPlayer && PlayerHandler.getPlayerData((EntityPlayer)thrower) != null)
+			teamOfThrower = PlayerHandler.getPlayerData((EntityPlayer)thrower).team;
+		setSize(grenadeType.hitBoxSize, grenadeType.hitBoxSize);
+		//Set the grenade to be facing the way the player is looking
+		axes.setAngles(roty + 90F, rotz, 0F);
+		rotationYaw = prevRotationYaw = grenadeType.spinWhenThrown ? roty + 90F : 0F;
+		//to separate it from the original codes
+		rotationPitch = prevRotationPitch = rotz;
+		//Give the grenade velocity in the direction the player is looking
+		motionX = axes.getXAxis().x * itsSpeed;
+		motionY = axes.getXAxis().y * itsSpeed;
+		motionZ = axes.getXAxis().z * itsSpeed;
+		if(type.spinWhenThrown) //set mark here
+			angularVelocity.set(0F, 0F, 10F);
 		if(type.throwSound != null)
 			PacketPlaySound.sendSoundPacket(posX, posY, posZ, FlansMod.soundRange, dimension, type.throwSound, true);
 	}
@@ -160,7 +182,7 @@ public class EntityGrenade extends EntityShootable implements IEntityAdditionalS
 				{
 					//Do some checks first
 					boolean smokeThem = true;
-					for(int i = 0; i < 5; i++)
+					for(int i = 0; i < 5; ++i)
 					{
 						//If any currently equipped item has smoke protection (gas masks), stop the effects
 						ItemStack stack = entity.getEquipmentInSlot(i);
@@ -177,7 +199,7 @@ public class EntityGrenade extends EntityShootable implements IEntityAdditionalS
 				}
 			}
 
-			smokeTime--;
+			--smokeTime;
 			if(smokeTime == 0)
 				setDead();
 		}
@@ -579,7 +601,7 @@ public class EntityGrenade extends EntityShootable implements IEntityAdditionalS
 			setDead();
 		}
 
-		if(type.flashBang && !this.worldObj.isRemote)
+		/*if(type.flashBang && !this.worldObj.isRemote)
 		{
 			List list = worldObj.getEntitiesWithinAABB(EntityLivingBase.class, boundingBox.expand(type.smokeRadius, type.smokeRadius, type.smokeRadius));
 			EntityPlayer entityP;
@@ -600,7 +622,7 @@ public class EntityGrenade extends EntityShootable implements IEntityAdditionalS
 				PacketPlaySound.sendSoundPacket(posX, posY, posZ, type.flashSoundRange, dimension, type.flashSound, true);
 			FlansMod.getPacketHandler().sendToAllAround(new PacketFlashBang(type.flashTime), posX, posY, posZ, type.flashRange, dimension);
 			setDead();
-		}
+		}*/
 	}
 
 	@Override
@@ -717,13 +739,14 @@ public class EntityGrenade extends EntityShootable implements IEntityAdditionalS
 			if(type.numClips > 0 && player.getCurrentEquippedItem() != null && player.getCurrentEquippedItem().getItem() instanceof ItemGun)
 			{
 				GunType gun = ((ItemGun)player.getCurrentEquippedItem().getItem()).type;
-				if(gun.ammo.size() > 0 && gun.allowRearm)
+				if(gun.ammo.length > 0 && gun.allowRearm)
 				{
-					ShootableType bulletToGive = gun.ammo.get(0);
-					int numToGive = Math.min(bulletToGive.maxStackSize, type.numClips * gun.getNumAmmoItemsInGun(player.getCurrentEquippedItem()));
-					if(player.inventory.addItemStackToInventory(new ItemStack(bulletToGive.item, numToGive)))
+					ShootableType bulletToGive = ShootableType.getByAmmoType(gun.ammo[0]).get(0);
+					if(bulletToGive != null)
 					{
-						used = true;
+						int numToGive = Math.min(bulletToGive.maxStackSize, type.numClips * gun.ammoCapacity);
+						if(player.inventory.addItemStackToInventory(new ItemStack(bulletToGive.item, numToGive)))
+							used = true;
 					}
 				}
 			}

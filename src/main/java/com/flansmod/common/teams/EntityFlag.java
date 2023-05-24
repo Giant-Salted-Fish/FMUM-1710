@@ -1,5 +1,8 @@
 package com.flansmod.common.teams;
 
+import com.flansmod.common.FlansMod;
+import com.flansmod.common.PlayerHandler;
+
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -7,9 +10,6 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.world.World;
-
-import com.flansmod.common.FlansMod;
-import com.flansmod.common.PlayerHandler;
 
 public class EntityFlag extends Entity implements ITeamObject {
 	

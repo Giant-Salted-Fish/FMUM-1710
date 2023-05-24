@@ -1,0 +1,11 @@
+// Naming
+Name H&K416 Buffer Tube
+ShortName HK416BufferTube
+Category ARBufferTube
+
+// Visual
+Icon HK416D10RS
+Model oc.ModelOCGun:HK416BufferTube skins/HK416D10RS.png 0.1
+
+// Attributes
+AttachableSlots -54.5 0 0 0 6 5 C[ ARStock ]

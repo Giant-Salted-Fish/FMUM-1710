@@ -2,12 +2,12 @@ package com.flansmod.client.model;
 
 import org.lwjgl.opengl.GL11;
 
+import com.flansmod.client.FlansModResourceHandler;
+import com.flansmod.common.guns.EntityMG;
+
 import net.minecraft.client.renderer.entity.Render;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.ResourceLocation;
-
-import com.flansmod.client.FlansModResourceHandler;
-import com.flansmod.common.guns.EntityMG;
 
 public class RenderMG extends Render
 {

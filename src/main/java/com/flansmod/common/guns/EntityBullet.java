@@ -1,37 +1,10 @@
 package com.flansmod.common.guns;
 
-import io.netty.buffer.ByteBuf;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.material.Material;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.particle.EntityFX;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.item.EntityItem;
-import net.minecraft.entity.item.EntityXPOrb;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.entity.projectile.EntityArrow;
-import net.minecraft.init.Blocks;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.potion.PotionEffect;
-import net.minecraft.util.AxisAlignedBB;
-import net.minecraft.util.DamageSource;
-import net.minecraft.util.EntityDamageSourceIndirect;
-import net.minecraft.util.MathHelper;
-import net.minecraft.util.MovingObjectPosition;
-import net.minecraft.util.Vec3;
-import net.minecraft.world.World;
-import net.minecraftforge.client.event.RenderHandEvent;
-
-import com.flansmod.client.FlansModClient;
 import com.flansmod.client.debug.EntityDebugDot;
 import com.flansmod.common.FlansMod;
 import com.flansmod.common.PlayerData;
@@ -52,30 +25,54 @@ import com.flansmod.common.guns.raytracing.PlayerHitbox;
 import com.flansmod.common.guns.raytracing.PlayerSnapshot;
 import com.flansmod.common.network.PacketFlak;
 import com.flansmod.common.network.PacketPlaySound;
+import com.flansmod.common.teams.ArmourType;
+import com.flansmod.common.teams.ItemTeamArmour;
 import com.flansmod.common.teams.Team;
 import com.flansmod.common.teams.TeamsManager;
 import com.flansmod.common.types.InfoType;
 import com.flansmod.common.vector.Vector3f;
 
 import cpw.mods.fml.common.FMLCommonHandler;
-import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.network.ByteBufUtils;
 import cpw.mods.fml.common.registry.GameRegistry;
 import cpw.mods.fml.common.registry.IEntityAdditionalSpawnData;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
+import io.netty.buffer.ByteBuf;
+import net.minecraft.block.Block;
+import net.minecraft.block.material.Material;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.item.EntityItem;
+import net.minecraft.entity.item.EntityXPOrb;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.entity.projectile.EntityArrow;
+import net.minecraft.init.Blocks;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.potion.PotionEffect;
+import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.util.DamageSource;
+import net.minecraft.util.EntityDamageSourceIndirect;
+import net.minecraft.util.MathHelper;
+import net.minecraft.util.MovingObjectPosition;
+import net.minecraft.util.Vec3;
+import net.minecraft.world.World;
 
 public class EntityBullet extends EntityShootable implements IEntityAdditionalSpawnData
 {
+	public static float thisIntersectTime = 0F;
+	//marked here to control the lifetime of a bullet
 	private static int bulletLife = 600; //Kill bullets after 30 seconds
 	public Entity owner;
 	private int ticksInAir;
 	public BulletType type;
+	//marked here to disable the kill messages
 	/** What type of weapon did this come from? For death messages */
 	public InfoType firedFrom;
 	/** The amount of damage the gun imparted upon the bullet. Multiplied by the bullet damage to get total damage */
 	public float damage;
-	public boolean shotgun = false;
 	/** If this is non-zero, then the player raytrace code will look back in time to when the player thinks their bullet should have hit */
 	public int pingOfShooter = 0;
 	/** Avoids the fact that using the entity random to calculate spread direction always results in the same direction */
@@ -140,28 +137,32 @@ public class EntityBullet extends EntityShootable implements IEntityAdditionalSp
 	}
 
 	/** Method called by ItemGun for creating bullets from a hand held weapon */
-	public EntityBullet(World world, EntityLivingBase shooter, float spread, float gunDamage, BulletType type1, float speed, boolean shot, InfoType shotFrom)
+	public EntityBullet(World world, EntityLivingBase shooter, float spread, float gunDamage, BulletType type1, float speed, InfoType shotFrom)
 	{
-		this(world, Vec3.createVectorHelper(shooter.posX, shooter.posY + shooter.getEyeHeight(), shooter.posZ), shooter.rotationYaw, shooter.rotationPitch, shooter, spread, gunDamage, type1, speed, shotFrom);
-		shotgun = shot;
+		this(world, Vec3.createVectorHelper(shooter.posX, shooter.posY + shooter.getEyeHeight(), shooter.posZ), 
+			 shooter.rotationYaw, shooter.rotationPitch, shooter, spread, gunDamage, type1, speed, shotFrom);
 	}
-
+	
+	public EntityBullet(World world, EntityLivingBase shooter, float spread, float gunDamage, BulletType type1, float speed, InfoType shotFrom, float x, float y, float z, float roty, float rotz)
+	{
+		this(world, Vec3.createVectorHelper(x, y, z), roty, rotz, shooter, spread, gunDamage, type1, speed, shotFrom);
+		//FlansModClient.addPlayerMessage("actual bullet pos: " + x + " " + y + " " + z + ", yaw: " + roty + ", pitch: " + rotz + ", posY: " + shooter.posY + ", eyeHight: " + shooter.getEyeHeight());
+	}
+	
 	/** Machinegun / AAGun bullet constructor */
 	public EntityBullet(World world, Vec3 origin, float yaw, float pitch, EntityLivingBase shooter, float spread, float gunDamage, BulletType type1, InfoType shotFrom)
-	{
-		this(world, origin, yaw, pitch, shooter, spread, gunDamage, type1, 3.0F, shotFrom);
-	}
+	{ this(world, origin, yaw, pitch, shooter, spread, gunDamage, type1, 3.0F, shotFrom); }
 
-	/** More generalised bullet constructor */
+	/** More generalised bullet constructor */ //use by ItemGun
 	public EntityBullet(World world, Vec3 origin, float yaw, float pitch, EntityLivingBase shooter, float spread, float gunDamage, BulletType type1, float speed, InfoType shotFrom)
 	{
 		this(world, shooter, gunDamage, type1, shotFrom);
 		setLocationAndAngles(origin.xCoord, origin.yCoord, origin.zCoord, yaw, pitch);
 		setPosition(posX, posY, posZ);
-		yOffset = 0.0F;
+		yOffset = 0F;
 		motionX = -MathHelper.sin((rotationYaw / 180F) * 3.14159265F) * MathHelper.cos((rotationPitch / 180F) * 3.14159265F);
 		motionZ = MathHelper.cos((rotationYaw / 180F) * 3.14159265F) * MathHelper.cos((rotationPitch / 180F) * 3.14159265F);
-		motionY = -MathHelper.sin((rotationPitch / 180F) * 3.141593F);
+		motionY = -MathHelper.sin((rotationPitch / 180F) * 3.14159265F);
 		setArrowHeading(motionX, motionY, motionZ, spread / 2F, speed);
 	}
 
@@ -190,9 +191,7 @@ public class EntityBullet extends EntityShootable implements IEntityAdditionalSp
 	}
 
 	@Override
-	protected void entityInit()
-	{
-	}
+	protected void entityInit() {}
 
 	public void setArrowHeading(double d, double d1, double d2, float spread, float speed)
 	{
@@ -258,7 +257,7 @@ public class EntityBullet extends EntityShootable implements IEntityAdditionalSp
 		motionX = d;
 		motionY = d1;
 		motionZ = d2;
-		if (prevRotationPitch == 0.0F && prevRotationYaw == 0.0F)
+		if(prevRotationPitch == 0.0F && prevRotationYaw == 0.0F)
 		{
 			float f = MathHelper.sqrt_double(d * d + d2 * d2);
 			prevRotationYaw = rotationYaw = (float) ((Math.atan2(d, d2) * 180D) / 3.1415927410125732D);
@@ -275,9 +274,9 @@ public class EntityBullet extends EntityShootable implements IEntityAdditionalSp
 		prevPosX = posX;
 		prevPosY = posY;
 		prevPosZ = posZ;
-		if(type==null)
+		if(type == null)
 		{
-			FlansMod.log("EntityBullet.onUpdate() Error: BulletType is null ("+this+")");
+			FlansMod.log("EntityBullet.onUpdate() Error: BulletType is null (" + this + ")");
 			setDead();
 			return;
 		}
@@ -293,7 +292,9 @@ public class EntityBullet extends EntityShootable implements IEntityAdditionalSp
 		if(!hasSetSubDelay && type.hasSubmunitions)
 		{
 			setSubmunitionDelay();
-		} else if(type.hasSubmunitions){
+		}
+		else if(type.hasSubmunitions)
+		{
 			submunitionDelay --;
 		}
 		
@@ -313,11 +314,9 @@ public class EntityBullet extends EntityShootable implements IEntityAdditionalSp
 			hasSetLook = true;
 		}
 		
-		
-
 		if(soundTime > 0)
 			soundTime--;
-
+		
 		if(owner != null)
 		{
 			double rangeX = owner.posX - this.posX;
@@ -340,7 +339,7 @@ public class EntityBullet extends EntityShootable implements IEntityAdditionalSp
 
 		//Check the fuse to see if the bullet should explode
 		ticksInAir++;
-		if (ticksInAir > type.fuse && type.fuse > 0 && !isDead)
+		if (type.fuse > 0 && ticksInAir > type.fuse && !isDead)
 		{
 			setDead();
 		}
@@ -353,7 +352,7 @@ public class EntityBullet extends EntityShootable implements IEntityAdditionalSp
 		if(isDead)
 			return;
 
-//Detonation conditions
+		//Detonation conditions
 		if(!worldObj.isRemote)
 		{
 			if(ticksExisted > type.fuse && type.fuse > 0)
@@ -421,7 +420,7 @@ public class EntityBullet extends EntityShootable implements IEntityAdditionalSp
 		}
 
 		//Iterate over all entities
-		for(int i = 0; i < worldObj.loadedEntityList.size(); i++)
+		for(int i = worldObj.loadedEntityList.size(); --i >= 0; )
 		{
 			Object obj = worldObj.loadedEntityList.get(i);
 			//Get driveables
@@ -449,9 +448,7 @@ public class EntityBullet extends EntityShootable implements IEntityAdditionalSp
 				if(data != null)
 				{
 					if(player.isDead || data.team == Team.spectators)
-					{
 						continue;
-					}
 					if(player == owner && ticksInAir < 20)
 						continue;
 					int snapshotToTry = TeamsManager.bulletSnapshotMin;
@@ -461,12 +458,14 @@ public class EntityBullet extends EntityShootable implements IEntityAdditionalSp
 					}
 					if(snapshotToTry >= data.snapshots.length)
 						snapshotToTry = data.snapshots.length - 1;
+					//mark here
+					else if(snapshotToTry < 0)
+						snapshotToTry = 0;
 					PlayerSnapshot snapshot;
-					if(data.snapshots[snapshotToTry] != null){
+					if(data.snapshots[snapshotToTry] != null)
 						snapshot = data.snapshots[snapshotToTry];
-					} else {
+					else
 						snapshot = data.snapshots[0];
-					}
 
 					//DEBUG
 					//snapshot = new PlayerSnapshot(player);
@@ -507,7 +506,7 @@ public class EntityBullet extends EntityShootable implements IEntityAdditionalSp
 			{
 				Entity entity = (Entity)obj;
 				if(entity != this && entity != owner && !entity.isDead && !(entity instanceof EntityItem) && !(entity instanceof EntityXPOrb) && !(entity instanceof EntityArrow) &&
-					(entity.getClass().toString().indexOf("flansmod.")<0 || entity instanceof EntityAAGun || entity instanceof EntityGrenade))
+					(entity.getClass().toString().indexOf("flansmod.") < 0 || entity instanceof EntityAAGun || entity instanceof EntityGrenade))
 				{
 					AxisAlignedBB bb = entity.boundingBox.addCoord(
 							-(entity.posX-entity.prevPosX)*2,
@@ -544,7 +543,7 @@ public class EntityBullet extends EntityShootable implements IEntityAdditionalSp
 		{
 			//Calculate the lambda value of the intercept
 			Vec3 hitVec = posVec.subtract(hit.hitVec);
-			float lambda = 1;
+			float lambda = 1F;
 			//Try each co-ordinate one at a time.
 			if(motionX != 0)
 				lambda = (float)(hitVec.xCoord / motionX);
@@ -558,78 +557,146 @@ public class EntityBullet extends EntityShootable implements IEntityAdditionalSp
 			hits.add(new BlockHit(hit, lambda));
 		}
 
-		//We hit something
+		// We hit something
 		if(!hits.isEmpty())
 		{
-			//Sort the hits according to the intercept position
+			// Sort the hits according to the intercept position
 			Collections.sort(hits);
 
 			for(BulletHit bulletHit : hits)
 			{
-				if(bulletHit instanceof DriveableHit)
+				if(bulletHit instanceof PlayerBulletHit)
 				{
+					thisIntersectTime = bulletHit.intersectTime;
 					if(type.entityHitSoundEnable)
-						PacketPlaySound.sendSoundPacket(posX, posY, posZ, type.hitSoundRange, dimension, type.hitSound, true);
-					if(worldObj.isRemote){
-						if(owner instanceof EntityPlayer){
-							if(FlansMod.proxy.isThePlayer((EntityPlayer)owner)){
-							    	hitCrossHair = true;
-							}
-						}
-					}
-					DriveableHit driveableHit = (DriveableHit)bulletHit;
-					driveableHit.driveable.lastAtkEntity = owner;
-					penetratingPower = driveableHit.driveable.bulletHit(this, driveableHit, penetratingPower);
-
-
-					if(type.canSpotEntityDriveable)
-						driveableHit.driveable.setEntityMarker(200);
-					//driveableHit.driveable.isShowedPosition = true;
-					//driveableHit.driveable.tickCount = 200;
+						PacketPlaySound.sendSoundPacket(posX + motionX * thisIntersectTime, posY + motionY * thisIntersectTime, posZ + motionZ * thisIntersectTime, type.hitSoundRange, dimension, type.hitSound, true);
+					// If this is the shooter's client, show hit mark
+					if(worldObj.isRemote && owner instanceof EntityPlayer && FlansMod.proxy.isThePlayer((EntityPlayer)owner))
+						hitCrossHair = true;
+					// Run player hit damage calculation
+//					PlayerBulletHit playerHit = (PlayerBulletHit)bulletHit;
+					penetratingPower = ((PlayerBulletHit)bulletHit).hitbox.hitByBullet(this, penetratingPower);
 					if(FlansMod.DEBUG)
-						worldObj.spawnEntityInWorld(new EntityDebugDot(worldObj, new Vector3f(posX + motionX * driveableHit.intersectTime, posY + motionY * driveableHit.intersectTime, posZ + motionZ * driveableHit.intersectTime), 1000, 0F, 0F, 1F));
-
-				}
-				else if(bulletHit instanceof PlayerBulletHit)
-				{
-					if(type.entityHitSoundEnable)
-						PacketPlaySound.sendSoundPacket(posX, posY, posZ, type.hitSoundRange, dimension, type.hitSound, true);
-					if(worldObj.isRemote){
-						if(owner instanceof EntityPlayer){
-							if(FlansMod.proxy.isThePlayer((EntityPlayer)owner)){
-							    	hitCrossHair = true;
-							}
-						}
+					{
+						worldObj.spawnEntityInWorld(
+								new EntityDebugDot(
+										worldObj,
+										new Vector3f(
+												posX + motionX * bulletHit.intersectTime,
+												posY + motionY * bulletHit.intersectTime,
+												posZ + motionZ * bulletHit.intersectTime
+										),
+										1000,
+										1F,
+										0F,
+										0F
+								)
+						);
 					}
-					PlayerBulletHit playerHit = (PlayerBulletHit)bulletHit;
-					penetratingPower = playerHit.hitbox.hitByBullet(this, penetratingPower);
-					if(FlansMod.DEBUG)
-						worldObj.spawnEntityInWorld(new EntityDebugDot(worldObj, new Vector3f(posX + motionX * playerHit.intersectTime, posY + motionY * playerHit.intersectTime, posZ + motionZ * playerHit.intersectTime), 1000, 1F, 0F, 0F));
 				}
 				else if(bulletHit instanceof EntityHit)
 				{
 					if(type.entityHitSoundEnable)
-						PacketPlaySound.sendSoundPacket(posX, posY, posZ, type.hitSoundRange, dimension, type.hitSound, true);
-					if(worldObj.isRemote){
-						if(owner instanceof EntityPlayer){
-							if(FlansMod.proxy.isThePlayer((EntityPlayer)owner)){
-							    	hitCrossHair = true;
+						PacketPlaySound.sendSoundPacket(posX + motionX * thisIntersectTime, posY + motionY * thisIntersectTime, posZ + motionZ * thisIntersectTime, type.hitSoundRange, dimension, type.hitSound, true);
+						//PacketPlaySound.sendSoundPacket(posX, posY, posZ, type.hitSoundRange, dimension, type.hitSound, true);
+					// Get EntityHit
+					EntityHit entityHit = (EntityHit)bulletHit;
+					// Make sure we hit some thing that can be hurt
+					if(entityHit.entity instanceof EntityLivingBase)
+					{
+						if(worldObj.isRemote && owner instanceof EntityPlayer && FlansMod.proxy.isThePlayer((EntityPlayer)owner))
+							hitCrossHair = true;
+						// If bullet can set entity hit on fire, set it
+						if(type.setEntitiesOnFire) entityHit.entity.setFire(20);
+						if(FlansMod.breakableArmor == 3)
+						{
+							EntityLivingBase livingBeenHit = (EntityLivingBase)entityHit.entity;
+							// If this bullet has potion effect
+							for(PotionEffect effect : type.hitEffects) livingBeenHit.addPotionEffect(new PotionEffect(effect));
+							// Check if this bullet can penetrate the armor of this living entity
+							ItemStack armorStack;
+							ArmourType armorType;
+							float hitDamage = damage * type.damageVsLiving, proofLevel;
+							int thisItemDamage, maxItemDamage;
+							boolean penetrated = true;
+							for(int i = 1; i < 5; ++i)
+							{
+								armorStack = livingBeenHit.getEquipmentInSlot(i);
+								if(armorStack != null && armorStack.getItem() instanceof ItemTeamArmour)
+								{
+									armorType = ((ItemTeamArmour)armorStack.getItem()).type;
+									thisItemDamage = armorStack.getItemDamage();
+									maxItemDamage = armorStack.getMaxDamage();
+									proofLevel = armorType.proofLevel[1] * (maxItemDamage - thisItemDamage) / maxItemDamage;
+									if(proofLevel <= 0F)
+										continue;
+									// If can't penetrate this armor
+									if(proofLevel >= type.maxPenetrationLevel || (proofLevel > type.minPenetrationLevel && 
+									   FlansMod.rand.nextFloat() < (proofLevel - type.minPenetrationLevel) / (type.maxPenetrationLevel - type.minPenetrationLevel)))
+									{
+										penetrated = false;
+										// Play the sound
+										if(armorType.numHitSounds[1] > 0)
+											PacketPlaySound.sendSoundPacket(posX + motionX * thisIntersectTime, posY + motionY * thisIntersectTime, posZ + motionZ * thisIntersectTime, 
+																			armorType.hitSoundRanges[1], dimension, armorType.hitSounds[1] + "_" + FlansMod.rand.nextInt(armorType.numHitSounds[1]), true);
+										penetratingPower = -1F;
+										if(livingBeenHit.attackEntityFrom(getBulletDamage(false), hitDamage * armorType.bluntDamageMult * type.bluntDamageMult))
+										{
+											// If the attack was allowed, we should remove their immortality cooldown so we can shoot them again. Without this, any rapid fire gun become useless
+											++livingBeenHit.arrowHitTimer;
+											livingBeenHit.hurtResistantTime = livingBeenHit.maxHurtResistantTime / 2;
+										}
+										// Not penetrated, damage the armor
+										thisItemDamage += FlansMod.getInt(type.armorBreakPower * armorType.bluntDurabilityMult);
+										armorStack.setItemDamage(thisItemDamage < maxItemDamage ? thisItemDamage : maxItemDamage);
+										// This armor can't be penetrated, no need for more test
+										break;
+									}
+									hitDamage *= armorType.penetratedDamageMult;
+									// Play the sound
+									if(armorType.numHitSounds[5] > 0)
+										PacketPlaySound.sendSoundPacket(posX + motionX * thisIntersectTime, posY + motionY * thisIntersectTime, posZ + motionZ * thisIntersectTime, 
+																		armorType.hitSoundRanges[5], dimension, armorType.hitSounds[5] + "_" + FlansMod.rand.nextInt(armorType.numHitSounds[5]), true);
+									// Penetrated, damage the armor
+									thisItemDamage += FlansMod.getInt(type.armorBreakPower * armorType.penetratedDurabilityMult);
+									armorStack.setItemDamage(thisItemDamage < maxItemDamage ? thisItemDamage : maxItemDamage);
+								}
 							}
+							// If bullet can penetrate all the armors, apply damage to this living
+							if(penetrated && livingBeenHit.attackEntityFrom(getBulletDamage(false), hitDamage))
+							{
+								++livingBeenHit.arrowHitTimer;
+								livingBeenHit.hurtResistantTime = livingBeenHit.maxHurtResistantTime / 2;
+							}
+							--penetratingPower;
+						}
+						else // Normal armor break mode or not living that can wear armor to do armor test
+						{
+							EntityLivingBase livingBeenHit = (EntityLivingBase)entityHit.entity;
+							if(livingBeenHit.attackEntityFrom(getBulletDamage(false), damage * type.damageVsLiving))
+							{
+								// If the attack was allowed, we should remove their immortality cooldown so we can shoot them again.
+								// Without this, any rapid fire gun become useless
+								++livingBeenHit.arrowHitTimer;
+								livingBeenHit.hurtResistantTime = livingBeenHit.maxHurtResistantTime / 2;
+							}
+							// Old code, applying attackEntityFrom for an entity that is not living base can cause fatal error
+							//entityHit.entity.attackEntityFrom(getBulletDamage(false), damage * type.damageVsEntity);
+							--penetratingPower;
 						}
 					}
+					/** old codes
 					EntityHit entityHit = (EntityHit)bulletHit;
 					float d = damage;
 					if(entityHit.entity instanceof EntityLivingBase)
 					{
 						d *= type.damageVsLiving;
 						if(entityHit.entity != owner)
-						FlansMod.proxy.spawnParticle("reddust", entityHit.entity.posX, entityHit.entity.posY, entityHit.entity.posZ, 0,0,0);
-
+							FlansMod.proxy.spawnParticle("reddust", entityHit.entity.posX, entityHit.entity.posY, entityHit.entity.posZ, 0,0,0);
 					}
-					else
-					{
+					else //not entity living, use damage VS entity
 						d *= type.damageVsEntity;
-					}
+					
 					if(entityHit.entity.attackEntityFrom(getBulletDamage(false), d) && entityHit.entity instanceof EntityLivingBase)
 					{
 						EntityLivingBase living = (EntityLivingBase)entityHit.entity;
@@ -643,11 +710,11 @@ public class EntityBullet extends EntityShootable implements IEntityAdditionalSp
 					}
 					if(type.setEntitiesOnFire)
 						entityHit.entity.setFire(20);
-					penetratingPower -= 1F;
+					penetratingPower -= 1F;*/
 					if(FlansMod.DEBUG)
 					{
 						worldObj.spawnEntityInWorld(new EntityDebugDot(worldObj, new Vector3f(posX + motionX * entityHit.intersectTime, posY + motionY * entityHit.intersectTime, posZ + motionZ * entityHit.intersectTime), 1000, 1F, 1F, 0F));
-						FlansMod.log(entityHit.entity.toString() + ": d=" + d + ": damage=" + damage + ": type.damageVsEntity=" + type.damageVsEntity);
+						FlansMod.log(entityHit.entity.toString() + /*": actual damage =" + d +*/ ": damage=" + damage + ", damageVsLiving = " + type.damageVsLiving);
 					}
 				}
 				else if(bulletHit instanceof BlockHit)
@@ -664,13 +731,10 @@ public class EntityBullet extends EntityShootable implements IEntityAdditionalSp
 					Block block = worldObj.getBlock(xTile, yTile, zTile);
 					Material mat = block.getMaterial();
 					//If the bullet breaks glass, and can do so according to FlansMod, do so.
-					if(type.breaksGlass && mat == Material.glass)
+					if(mat == Material.glass && type.breaksGlass && TeamsManager.canBreakGlass)
 					{
-						if(TeamsManager.canBreakGlass)
-						{
-							worldObj.setBlockToAir(xTile, yTile, zTile);
-							FlansMod.proxy.playBlockBreakSound(xTile, yTile, zTile, block);
-						}
+						worldObj.setBlockToAir(xTile, yTile, zTile);
+						FlansMod.proxy.playBlockBreakSound(xTile, yTile, zTile, block);
 					}
 
 					if(worldObj.isRemote)
@@ -699,7 +763,39 @@ public class EntityBullet extends EntityShootable implements IEntityAdditionalSp
 					if(type.hitSoundEnable)
 						PacketPlaySound.sendSoundPacket(posX, posY, posZ, type.hitSoundRange, dimension, type.hitSound, true);
 					setDead();
+					/** new code may be 
+					if(type.hitSoundEnable)
+						PacketPlaySound.sendSoundPacket(hit.hitVec.xCoord, hit.hitVec.yCoord, hit.hitVec.zCoord, type.hitSoundRange, dimension, type.hitSound, true);
+					penetratingPower -= block.getBlockHardness(worldObj, zTile, zTile, zTile);
+					if(penetratingPower <= 0F)
+					{
+						setPosition(hit.hitVec.xCoord, hit.hitVec.yCoord, hit.hitVec.zCoord);
+						setDead();
+					}*/
 					break;
+				}
+				else if(bulletHit instanceof DriveableHit)
+				{
+					if(type.entityHitSoundEnable)
+						PacketPlaySound.sendSoundPacket(posX, posY, posZ, type.hitSoundRange, dimension, type.hitSound, true);
+					if(worldObj.isRemote){
+						if(owner instanceof EntityPlayer){
+							if(FlansMod.proxy.isThePlayer((EntityPlayer)owner)){
+							    	hitCrossHair = true;
+							}
+						}
+					}
+					DriveableHit driveableHit = (DriveableHit)bulletHit;
+					driveableHit.driveable.lastAtkEntity = owner;
+					penetratingPower = driveableHit.driveable.bulletHit(this, driveableHit, penetratingPower);
+
+
+					if(type.canSpotEntityDriveable)
+						driveableHit.driveable.setEntityMarker(200);
+					//driveableHit.driveable.isShowedPosition = true;
+					//driveableHit.driveable.tickCount = 200;
+					if(FlansMod.DEBUG)
+						worldObj.spawnEntityInWorld(new EntityDebugDot(worldObj, new Vector3f(posX + motionX * driveableHit.intersectTime, posY + motionY * driveableHit.intersectTime, posZ + motionZ * driveableHit.intersectTime), 1000, 0F, 0F, 1F));
 				}
 				if(penetratingPower <= 0F || (type.explodeOnImpact && ticksInAir > 1))
 				{
@@ -707,9 +803,7 @@ public class EntityBullet extends EntityShootable implements IEntityAdditionalSp
 					setDead();
 					break;
 				}
-
 			}
-
 		}
 		//Otherwise, do a standard check for uninteresting entities
 		/*
@@ -766,24 +860,29 @@ public class EntityBullet extends EntityShootable implements IEntityAdditionalSp
 		}
 		*/
 
-		//Movement dampening variables
-		float drag = type.dragInAir;
-		float gravity = 0.02F;
-		//If the bullet is in water, spawn particles and increase the drag
-		if (isInWater())
+		// Movement dampening variables
+		// If the bullet is in water, spawn particles and increase the drag
+		if(isInWater())
 		{
-			for(int i = 0; i < 4; i++)
+			for(int i = 0; i < 4; ++i)
 			{
 				float bubbleMotion = 0.25F;
 				worldObj.spawnParticle("bubble", posX - motionX * bubbleMotion, posY - motionY * bubbleMotion, posZ - motionZ * bubbleMotion, motionX, motionY + 0.1F, motionZ);
 			}
-			drag = type.dragInWater;
+			if(!type.torpedo)
+			{
+				motionX *= type.dragInWater;
+				motionY *= type.dragInWater;
+				motionZ *= type.dragInWater;
+				motionY -= 0.02F * type.fallSpeed;
+			}
 		}
-		if(!isInWater() || !type.torpedo){
-		motionX *= drag;
-		motionY *= drag;
-		motionZ *= drag;
-		motionY -= gravity * type.fallSpeed;
+		else // In air
+		{
+			motionX *= type.dragInAir;
+			motionY *= type.dragInAir;
+			motionZ *= type.dragInAir;
+			motionY -= 0.02F * type.fallSpeed;
 		}
 
 		// Apply homing action
@@ -889,7 +988,8 @@ public class EntityBullet extends EntityShootable implements IEntityAdditionalSp
 				lockedOnTo = null;
 			}
 		}
-
+		
+		//marked here for this seems to be a way to print out something on screen
 		//System.out.println((int)posX+","+(int)posY+","+(int)posZ);
 
 		if(owner != null && type.shootForSettingPos && !this.isFirstPositionSetting)
@@ -1083,14 +1183,13 @@ public class EntityBullet extends EntityShootable implements IEntityAdditionalSp
 	private void spawnHitParticles(double x, double y, double z)
 	{
 		FlansMod.proxy.spawnParticle("explode", x,y,z, 0,0,0);
-
 	}
 
 	public DamageSource getBulletDamage(boolean headshot)
 	{
 		if(owner instanceof EntityPlayer)
 			return (new EntityDamageSourceGun(type.shortName, this, (EntityPlayer)owner, firedFrom, headshot)).setProjectile();
-		else return (new EntityDamageSourceIndirect(type.shortName, this, owner)).setProjectile();
+		return (new EntityDamageSourceIndirect(type.shortName, this, owner)).setProjectile();
 	}
 
 	private boolean isPartOfOwner(Entity entity) {

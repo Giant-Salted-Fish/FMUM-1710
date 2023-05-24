@@ -1,0 +1,11 @@
+// Naming
+Name H&K416 Barrel Extension
+ShortName HK416BarrelExtension
+Category HK416BarrelExtension
+
+// Visual
+Icon HK416D10RS
+Model oc.ModelOCGun:HK416BarrelExtension skins/HK416D10RS.png 0.1
+
+// Attributes
+AttachableSlots 1 C[ HK416Barrel ]

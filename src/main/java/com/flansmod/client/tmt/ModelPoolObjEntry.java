@@ -53,7 +53,7 @@ public class ModelPoolObjEntry extends ModelPoolEntry
 					for(int i = 0; i < 3; i++)
 					{
 						int ind = s.indexOf(" ");
-						if(ind > -1)
+						if(ind >= 0)
 							v[i] = Float.parseFloat(s.substring(0, ind));
 						else
 							v[i] = Float.parseFloat(s.substring(0));
@@ -74,7 +74,7 @@ public class ModelPoolObjEntry extends ModelPoolEntry
 					for(int i = 0; i < 2; i++)
 					{
 						int ind = s.indexOf(" ");
-						if(ind > -1)
+						if(ind >= 0)
 							v[i] = Float.parseFloat(s.substring(0, ind));
 						else
 							v[i] = Float.parseFloat(s.substring(0));
@@ -91,7 +91,7 @@ public class ModelPoolObjEntry extends ModelPoolEntry
 					for(int i = 0; i < 3; i++)
 					{
 						int ind = s.indexOf(" ");
-						if(ind > -1)
+						if(ind >= 0)
 							v[i] = Float.parseFloat(s.substring(0, ind));
 						else
 							v[i] = Float.parseFloat(s.substring(0));
@@ -120,7 +120,7 @@ public class ModelPoolObjEntry extends ModelPoolEntry
 						float[] curNormals;
 						int ind = s.indexOf(" ");
 						s1 = s;
-						if(ind > -1)
+						if(ind >= 0)
 							s1 = s.substring(0, ind);
 						if(s1.contains("/"))
 						{
@@ -174,11 +174,10 @@ public class ModelPoolObjEntry extends ModelPoolEntry
 								verts.get(vInt).addGroup(group);
 							}
 						}
-						if(ind > -1)
-							s = s.substring(s.indexOf(" ") + 1).trim();
-						else
-							finalPhase++;
-					} while(finalPhase < 1);
+						if(ind >= 0) s = s.substring(s.indexOf(" ") + 1).trim();
+						else finalPhase++;
+					}
+					while(finalPhase < 1);
 					
 					float d = MathHelper.sqrt_double(normal[0] * normal[0] + normal[1] * normal[1] + normal[2] * normal[2]);
 					

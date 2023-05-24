@@ -6,6 +6,16 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
+import com.flansmod.common.FlansMod;
+import com.flansmod.common.paintjob.IPaintableItem;
+import com.flansmod.common.paintjob.PaintableType;
+import com.flansmod.common.parts.PartType;
+import com.flansmod.common.types.EnumType;
+import com.flansmod.common.types.InfoType;
+
+import cpw.mods.fml.common.registry.GameRegistry;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockLiquid;
 import net.minecraft.block.BlockSponge;
@@ -23,18 +33,6 @@ import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.MovingObjectPosition.MovingObjectType;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
-
-import com.flansmod.common.FlansMod;
-import com.flansmod.common.paintjob.IPaintableItem;
-import com.flansmod.common.paintjob.PaintableType;
-import com.flansmod.common.parts.PartType;
-import com.flansmod.common.types.EnumType;
-import com.flansmod.common.types.IFlanItem;
-import com.flansmod.common.types.InfoType;
-
-import cpw.mods.fml.common.registry.GameRegistry;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
 
 public class ItemPlane extends Item implements IPaintableItem
 {
@@ -206,12 +204,12 @@ public class ItemPlane extends Item implements IPaintableItem
     @SideOnly(Side.CLIENT)
     public void registerIcons(IIconRegister icon)
     {
-    	icons = new IIcon[type.paintjobs.size()];
+    	icons = new IIcon[type.paintjobs.length];
     	
         itemIcon = icon.registerIcon("FlansMod:" + type.iconPath);
-    	for(int i = 0; i < type.paintjobs.size(); i++)
+    	for(int i = 0; i < type.paintjobs.length; i++)
     	{
-    		icons[i] = icon.registerIcon("FlansMod:" + type.paintjobs.get(i).iconName);
+    		icons[i] = icon.registerIcon("FlansMod:" + type.paintjobs[i].iconName);
     	}
     }
 
@@ -247,7 +245,7 @@ public class ItemPlane extends Item implements IPaintableItem
 	}
 
 	@Override
-	public PaintableType GetPaintableType() 
+	public PaintableType getPaintableType() 
 	{
 		return type;
 	}

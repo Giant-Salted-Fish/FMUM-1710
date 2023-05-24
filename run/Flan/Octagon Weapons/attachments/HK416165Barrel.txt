@@ -1,0 +1,11 @@
+// Naming
+Name H&K416 16.5" Barrel
+ShortName HK416165Barrel
+Category HK416Barrel
+
+// Visual
+Icon HK416D10RS
+Model oc.ModelOCGun:HK416165Barrel skins/HK416D10RS.png 0.1
+
+// Attributes
+AttachableSlots 115 C[ 556mmMuzzle ] | 49 C[ HK416GasBlock ]

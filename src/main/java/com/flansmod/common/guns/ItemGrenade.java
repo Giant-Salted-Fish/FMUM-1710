@@ -1,5 +1,15 @@
 package com.flansmod.common.guns;
 
+import com.flansmod.common.FlansMod;
+import com.flansmod.common.PlayerData;
+import com.flansmod.common.PlayerHandler;
+import com.flansmod.common.types.IFlanItem;
+import com.flansmod.common.types.InfoType;
+import com.flansmod.common.vector.Vector3f;
+import com.google.common.collect.Multimap;
+
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.SharedMonsterAttributes;
@@ -9,16 +19,6 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
-
-import com.flansmod.common.FlansMod;
-import com.flansmod.common.PlayerData;
-import com.flansmod.common.PlayerHandler;
-import com.flansmod.common.types.IFlanItem;
-import com.flansmod.common.types.InfoType;
-import com.flansmod.common.vector.Vector3f;
-import com.google.common.collect.Multimap;
 
 public class ItemGrenade extends ItemShootable implements IFlanItem
 {
@@ -41,23 +41,17 @@ public class ItemGrenade extends ItemShootable implements IFlanItem
     }
 	
 	@Override
-	public boolean isFull3D()
-	{
-		return true;
-	}
+	public boolean isFull3D() { return true; } //set mark here
 	
 	@Override
-	public boolean onEntitySwing(EntityLivingBase entityLiving, ItemStack stack)
-	{
-		return type.meleeDamage == 0;
-	}
+	public boolean onEntitySwing(EntityLivingBase entityLiving, ItemStack stack) { return type.meleeDamage == 0; }
 	
 	@Override
 	public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player)
 	{
 		PlayerData data = PlayerHandler.getPlayerData(player, world.isRemote ? Side.CLIENT : Side.SERVER);
 		//If can throw grenade
-		if(type.canThrow && data != null && data.shootTimeRight <= 0 && data.shootTimeLeft <= 0)
+		if(type.canThrow && data != null && data.shootTimeRight <= 0)
 		{
 			//Delay the next throw / weapon fire / whatnot
 			data.shootTimeRight = type.throwDelay;
@@ -91,29 +85,20 @@ public class ItemGrenade extends ItemShootable implements IFlanItem
 	
 	@Override
     @SideOnly(Side.CLIENT)
-    public int getColorFromItemStack(ItemStack par1ItemStack, int par2)
-    {
-    	return type.colour;
-    }
+    public int getColorFromItemStack(ItemStack par1ItemStack, int par2) { return type.colour; }
 	
     @Override
     @SideOnly(Side.CLIENT)
-    public void registerIcons(IIconRegister icon) 
-    {
-    	itemIcon = icon.registerIcon("FlansMod:" + type.iconPath);
-    }
+    public void registerIcons(IIconRegister icon) { itemIcon = icon.registerIcon("FlansMod:" + type.iconPath); }
     
 	@Override
-	public InfoType getInfoType() 
-	{
-		return type;
-	}
+	public InfoType getInfoType() { return type; }
 
 	@Override
-	public EntityShootable getEntity(World worldObj, Vec3 origin, float yaw,
-			float pitch, double motionX, double motionY, double motionZ,
-			EntityLivingBase shooter, float gunDamage, int itemDamage,
-			InfoType shotFrom) {
+	public EntityShootable getEntity(World worldObj, Vec3 origin, float yaw, 
+			float pitch, double motionX, double motionY, double motionZ, 
+			EntityLivingBase shooter, float gunDamage, int itemDamage, InfoType shotFrom)
+	{
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -122,24 +107,30 @@ public class ItemGrenade extends ItemShootable implements IFlanItem
 	public EntityShootable getEntity(World worldObj, Vector3f origin,
 			Vector3f direction, EntityLivingBase thrower, float spread,
 			float damage, float speed, int itemDamage, InfoType shotFrom) 
-	{
-		return getGrenade(worldObj, thrower);
-	}
+	{ return getGrenade(worldObj, thrower); }
 
 	@Override
 	public EntityShootable getEntity(World worldObj, Vec3 origin, float yaw,
 			float pitch, EntityLivingBase shooter, float spread, float damage,
-			int itemDamage, InfoType shotFrom) {
+			int itemDamage, InfoType shotFrom)
+	{
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public EntityShootable getEntity(World worldObj, EntityLivingBase player,
-			float bulletSpread, float damage, float bulletSpeed, boolean b,
-			int itemDamage, InfoType shotFrom) 
+	public EntityShootable getEntity(World worldObj, EntityLivingBase player, float bulletSpread, float damage, 
+									 float bulletSpeed, int itemDamage, InfoType shotFrom)
+	{ return getGrenade(worldObj, player); }
+	
+	@Override
+	public EntityShootable getEntity(World worldObj, EntityLivingBase player, float bulletSpread, float damage, float bulletSpeed, 
+									 InfoType shotFrom, float x, float y, float z, float roty, float rotz) 
 	{
-		return getGrenade(worldObj, player);
+		EntityGrenade grenade = new EntityGrenade(worldObj, type, player, bulletSpread, x, y, z, roty, rotz);
+		if(type.remote && player instanceof EntityPlayer)
+			PlayerHandler.getPlayerData((EntityPlayer)player).remoteExplosives.add(grenade);
+		return grenade;
 	}
 	
 	public EntityGrenade getGrenade(World world, EntityLivingBase thrower)

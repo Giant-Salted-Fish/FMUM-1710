@@ -3,16 +3,15 @@ package com.flansmod.common.teams;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import net.minecraft.client.model.ModelBase;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.IIcon;
-
 import com.flansmod.common.FlansMod;
 import com.flansmod.common.types.InfoType;
 import com.flansmod.common.types.TypeFile;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraft.client.model.ModelBase;
+import net.minecraft.item.ItemStack;
+import net.minecraft.util.IIcon;
 
 public class ArmourBoxType extends InfoType 
 {
@@ -101,8 +100,10 @@ public class ArmourBoxType extends InfoType
 			
 		} catch (Exception e)
 		{
-			FlansMod.log("Reading gun box file failed : " + shortName);
-			e.printStackTrace();
+			String line = split[0];
+			for(int i = 1; i < split.length; ++i) line += " " + split[i];
+			FlansMod.log("error > failed to parse key word <" + line + "> for armor box <" + shortName + ">");
+			if(FlansMod.printStackTrace) e.printStackTrace();
 		}
 	}
 

@@ -1,0 +1,11 @@
+// Naming
+Name CIC WTS-36 16.5" Barrel
+ShortName CICWTS36165Barrel
+Category CICWTS36165Barrel
+
+// Visual
+Icon CICWTS36C
+Model oc.ModelOCGun:CICWTS36165Barrel skins/CICWTS36C.png 0.1
+
+// Attributes
+AttachableSlots 115 C[ 556mmMuzzle ] | 96 C[ HK416GasBlock ]

@@ -1,0 +1,10 @@
+// Naming
+Name 5.56mm Thread Protector
+ShortName 556mmThreadProtector
+Category 556mmMuzzle
+
+// Visual
+Icon HK416D10RS
+Model oc.ModelOCGun:556mmThreadProtector skins/HK416D10RS.png 0.1
+
+// Attributes

@@ -1,13 +1,12 @@
 package com.flansmod.common.network;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandlerContext;
-
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
-
 import com.flansmod.common.guns.ContainerGunModTable;
 import com.flansmod.common.paintjob.ContainerPaintjobTable;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandlerContext;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 
 public class PacketGunPaint extends PacketBase 
 {

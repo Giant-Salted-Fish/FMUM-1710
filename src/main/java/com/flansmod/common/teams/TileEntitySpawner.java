@@ -3,6 +3,11 @@ package com.flansmod.common.teams;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.flansmod.common.FlansMod;
+import com.flansmod.common.driveables.ItemPlane;
+import com.flansmod.common.driveables.ItemVehicle;
+import com.flansmod.common.guns.ItemAAGun;
+
 import net.minecraft.entity.Entity;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemStack;
@@ -12,11 +17,6 @@ import net.minecraft.network.Packet;
 import net.minecraft.network.play.server.S35PacketUpdateTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraftforge.common.ForgeChunkManager.Ticket;
-
-import com.flansmod.common.FlansMod;
-import com.flansmod.common.driveables.ItemPlane;
-import com.flansmod.common.driveables.ItemVehicle;
-import com.flansmod.common.guns.ItemAAGun;
 
 public class TileEntitySpawner extends TileEntity implements ITeamObject
 {
@@ -84,7 +84,7 @@ public class TileEntitySpawner extends TileEntity implements ITeamObject
 		}
 		if(worldObj.getBlockMetadata(xCoord, yCoord, zCoord) == 1)
 			return;
-		for(int i = itemEntities.size() - 1; i >= 0; i--)
+		for(int i = itemEntities.size(); --i >= 0; )
 		{
 			if(itemEntities.get(i).isDead)
 				itemEntities.remove(i);

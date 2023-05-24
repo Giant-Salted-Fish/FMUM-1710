@@ -2,7 +2,6 @@ package com.flansmod.common.guns;
 
 import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.Slot;
-import net.minecraft.item.ItemStack;
 
 public class SlotGun extends Slot 
 {
@@ -16,7 +15,7 @@ public class SlotGun extends Slot
 		gunSlot = s;
 	}
 
-    public boolean isItemValid(ItemStack stack)
+    /*public boolean isItemValid(ItemStack stack)
     {
     	switch(slotID)
     	{
@@ -40,5 +39,5 @@ public class SlotGun extends Slot
     	AttachmentType attachmentType = ((ItemAttachment)stack.getItem()).type;
     	GunType gunType = ((ItemGun)gunSlot.getStack().getItem()).type;
     	return gunType.allowAllAttachments || gunType.allowedAttachments.contains(attachmentType);
-    }
+    }*/
 }

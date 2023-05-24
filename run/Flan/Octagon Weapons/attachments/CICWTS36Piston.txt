@@ -1,0 +1,10 @@
+// Naming
+Name CIC WTS-36 Piston
+ShortName CICWTS36Piston
+Category HK416Piston
+
+// Visual
+Icon CICWTS36C
+Model oc.ModelOCGun:CICWTS36Piston skins/CICWTS36C.png 0.1
+
+// Attributes

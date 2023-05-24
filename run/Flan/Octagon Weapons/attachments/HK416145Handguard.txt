@@ -1,0 +1,12 @@
+// Naming
+Name H&K416 14.5" Handguard
+ShortName HK416145Handguard
+Category HK416Handguard
+
+// Visual
+Icon HK416D10RS
+Model oc.ModelOCGun:HK416145Handguard skins/HK416D10RS.png 0.1
+
+// Attributes
+LeftHandPriority 0
+AttachableSlots 2 11 0 0 4 15 8 C[ PR ] | 76 11 0 0 4 5 8 C[ PR ] | 3 -9 0 180 4 23 8 C[ PR ] | 4 0 -9 -90 4 23 8 C[ PR ] | 4 0 9 90 4 23 8 C[ PR ]

@@ -8,8 +8,5 @@ import net.minecraft.world.World;
 public abstract class EntityShootable extends Entity 
 {
 	public EntityDriveable driveable;
-	public EntityShootable(World w) 
-	{
-		super(w);
-	}
+	public EntityShootable(World w) { super(w); }
 }

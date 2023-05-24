@@ -1,28 +1,8 @@
 package com.flansmod.client;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
-
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.client.gui.ScaledResolution;
-import net.minecraft.client.renderer.OpenGlHelper;
-import net.minecraft.client.renderer.RenderHelper;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.entity.RenderItem;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.MathHelper;
-import net.minecraft.util.MouseHelper;
-import net.minecraft.util.MovingObjectPosition;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.world.EnumSkyBlock;
-import net.minecraftforge.client.event.MouseEvent;
-import net.minecraftforge.client.event.RenderGameOverlayEvent;
-import net.minecraftforge.client.event.RenderGameOverlayEvent.ElementType;
-import net.minecraftforge.common.MinecraftForge;
 
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.GL11;
@@ -31,8 +11,10 @@ import org.lwjgl.opengl.GL12;
 import com.flansmod.client.gui.GuiDriveableController;
 import com.flansmod.client.gui.GuiTeamScores;
 import com.flansmod.client.model.RenderFlag;
+import com.flansmod.client.model.RenderFlan;
 import com.flansmod.client.model.RenderGun;
 import com.flansmod.common.FlansMod;
+import com.flansmod.common.OperationQueue.Operation;
 import com.flansmod.common.PlayerData;
 import com.flansmod.common.PlayerHandler;
 import com.flansmod.common.driveables.EntityDriveable;
@@ -44,7 +26,9 @@ import com.flansmod.common.driveables.mechas.EntityMecha;
 import com.flansmod.common.guns.AttachmentType;
 import com.flansmod.common.guns.EntityBullet;
 import com.flansmod.common.guns.GunType;
+import com.flansmod.common.guns.GunType.GunTag;
 import com.flansmod.common.guns.ItemGun;
+import com.flansmod.common.network.PacketGunAttachment;
 import com.flansmod.common.network.PacketTeamInfo;
 import com.flansmod.common.teams.ItemTeamArmour;
 import com.flansmod.common.teams.TeamsManager;
@@ -52,11 +36,31 @@ import com.flansmod.common.types.InfoType;
 import com.flansmod.common.vector.Vector3f;
 import com.flansmod.common.vector.Vector3i;
 
-import cpw.mods.fml.client.FMLClientHandler;
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.TickEvent;
 import cpw.mods.fml.relauncher.Side;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.FontRenderer;
+import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.client.gui.ScaledResolution;
+import net.minecraft.client.renderer.OpenGlHelper;
+import net.minecraft.client.renderer.RenderHelper;
+import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.entity.RenderItem;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.MathHelper;
+import net.minecraft.util.MouseHelper;
+import net.minecraft.util.MovingObjectPosition;
+import net.minecraft.util.ResourceLocation;
+import net.minecraft.world.EnumSkyBlock;
+import net.minecraftforge.client.event.MouseEvent;
+import net.minecraftforge.client.event.RenderGameOverlayEvent;
+import net.minecraftforge.client.event.RenderGameOverlayEvent.ElementType;
+import net.minecraftforge.common.MinecraftForge;
 
 public class TickHandlerClient
 {
@@ -72,6 +76,7 @@ public class TickHandlerClient
 	int flashTime;
 	EntityPlayer entityPlayerFlash;
 	private static GuiScreen guiDriveableController = null;
+	private static final ResourceLocation stateBar = new ResourceLocation("flansmod", "gui/stateBar.png");
 
 	public TickHandlerClient()
 	{
@@ -82,40 +87,62 @@ public class TickHandlerClient
 	@SubscribeEvent
 	public void eventHandler(MouseEvent event)
 	{
-		EntityPlayer player = Minecraft.getMinecraft().thePlayer;
-		if(player.getCurrentEquippedItem() != null && player.getCurrentEquippedItem().getItem() instanceof ItemGun)
+		if(Math.abs(event.dwheel) > 0 && FlansModClient.itemStack != null && FlansModClient.itemStack.getItem() instanceof ItemGun 
+				&& FlansModClient.currentScope && FlansMod.zoomWithWheel)
 		{
-			if(((ItemGun)player.getCurrentEquippedItem().getItem()).type.oneHanded && Keyboard.isKeyDown(Minecraft.getMinecraft().gameSettings.keyBindSneak.getKeyCode()) && Math.abs(event.dwheel) > 0)
-				event.setCanceled(true);
-
+			boolean cancelEvent = false;
+			LinkedList<byte[]> sightsOnUse = GunType.getOnUseSightsAt(GunType.getStates(FlansModClient.itemStack), GunType.getSightList(FlansModClient.itemStack));
+			if(sightsOnUse.size() == 0) return;
+			NBTTagCompound sightTag;
+			AttachmentType sightType;
+			for(byte[] sightAt : sightsOnUse)
+			{
+				sightType = AttachmentType.getAtType(sightTag = 
+						GunType.getAtTagAt(FlansModClient.itemStack.stackTagCompound, sightAt, sightAt.length & -2));
+				if(sightType.FOVZoomLevel.length < 2) continue;
+				cancelEvent = true;
+				byte currentZoomStep = AttachmentType.getZoomStep(AttachmentType.getStates(sightTag));
+				boolean lastOutOfBound = currentZoomStep == 0, nextOutOfBound = currentZoomStep + 1 == sightType.FOVZoomLevel.length;
+				float currentZoom = sightType.FOVZoomLevel[currentZoomStep], 
+						lastZoom = sightType.FOVZoomLevel[(lastOutOfBound ? sightType.FOVZoomLevel.length : currentZoomStep) - 1], 
+						nextZoom = sightType.FOVZoomLevel[nextOutOfBound ? 0 : (currentZoomStep + 1)];
+				if(FlansMod.loopWhenChangeZoom)
+				{
+					FlansMod.getPacketHandler().sendToServer(new PacketGunAttachment(
+							(event.dwheel < 0 ? nextZoom < currentZoom : nextZoom > currentZoom) ? Operation.NEXT_ZOOM_L : Operation.LAST_ZOOM_L));
+					event.setCanceled(true);
+					return;
+				}
+				if(event.dwheel < 0)
+				{
+					if(nextZoom < currentZoom && !nextOutOfBound) FlansMod.getPacketHandler().sendToServer(new PacketGunAttachment(Operation.NEXT_ZOOM));
+					else if(lastZoom < currentZoom && !lastOutOfBound) FlansMod.getPacketHandler().sendToServer(new PacketGunAttachment(Operation.LAST_ZOOM));
+					else continue;
+				}
+				else if(nextZoom > currentZoom && !nextOutOfBound) FlansMod.getPacketHandler().sendToServer(new PacketGunAttachment(Operation.NEXT_ZOOM));
+				else if(lastZoom > currentZoom && !lastOutOfBound) FlansMod.getPacketHandler().sendToServer(new PacketGunAttachment(Operation.LAST_ZOOM));
+				else continue;
+				break;
+			}
+			if(cancelEvent) event.setCanceled(true);
 		}
 	}
 
 	@SubscribeEvent
 	public void eventHandler(RenderGameOverlayEvent event)
 	{
-		Minecraft mc = Minecraft.getMinecraft();
+		Minecraft mc = FlansModClient.minecraft;
 		//If main config is set to false, blanket disable crosshairs (client synced)
-		if(!FlansMod.crosshairEnable && event.type == ElementType.CROSSHAIRS && mc.thePlayer != null && mc.thePlayer.getHeldItem() != null && mc.thePlayer.getHeldItem().getItem() instanceof ItemGun)
+		if(event.type == ElementType.CROSSHAIRS && mc.thePlayer != null && mc.thePlayer.getHeldItem() != null && mc.thePlayer.getHeldItem().getItem() instanceof ItemGun)
 		{
-			event.setCanceled(true);
-			return;
-		}
-		//Otherwise, fall back to weapon config settings (default false)
-		else
-		{
-			//Remove crosshairs if looking down the sights of a gun
-			if(event.type == ElementType.CROSSHAIRS && mc.thePlayer != null && mc.thePlayer.getHeldItem() != null && mc.thePlayer.getHeldItem().getItem() instanceof ItemGun)
+			if(!FlansMod.crosshairEnable || !((ItemGun)mc.thePlayer.getHeldItem().getItem()).type.showCrosshair || FlansModClient.currentScope)
 			{
-				if(!((ItemGun)mc.thePlayer.getHeldItem().getItem()).type.showCrosshair || FlansModClient.currentScope != null) 
-				{
-					event.setCanceled(true);
-					return;
-				}
+				event.setCanceled(true);
+				return;
 			}
 		}
 
-		ScaledResolution scaledresolution = new ScaledResolution(FlansModClient.minecraft, FlansModClient.minecraft.displayWidth, FlansModClient.minecraft.displayHeight);
+		ScaledResolution scaledresolution = new ScaledResolution(mc, mc.displayWidth, mc.displayHeight);
 		int i = scaledresolution.getScaledWidth();
 		int j = scaledresolution.getScaledHeight();
 
@@ -123,50 +150,42 @@ public class TickHandlerClient
 
 		if(!event.isCancelable() && event.type == ElementType.HELMET)
 		{
-			//Scopes and helmet overlays
+			//helmet overlays
 			String overlayTexture = null;
-			if (FlansModClient.currentScope != null && FlansModClient.currentScope.hasZoomOverlay() && FMLClientHandler.instance().getClient().currentScreen == null && FlansModClient.zoomProgress > 0.8F)
+			if(mc.thePlayer != null)
 			{
-				overlayTexture = FlansModClient.currentScope.getZoomOverlay();
-			}
-			else if(mc.thePlayer != null)
-			{
-				ItemStack stack = mc.thePlayer.inventory.armorInventory[3];
-				if(stack != null && stack.getItem() instanceof ItemTeamArmour)
+				ItemStack helmetStack = mc.thePlayer.inventory.armorInventory[3];
+				if(helmetStack != null && helmetStack.getItem() instanceof ItemTeamArmour
+						&& (overlayTexture = ((ItemTeamArmour)helmetStack.getItem()).type.overlay[com.flansmod.common.teams.ArmourType.getMask(helmetStack) ? 1 : 0]) != null)
 				{
-					overlayTexture = ((ItemTeamArmour)stack.getItem()).type.overlay;
+					FlansModClient.minecraft.entityRenderer.setupOverlayRendering();
+					GL11.glEnable(3042 /* GL_BLEND */);
+					GL11.glDisable(2929 /* GL_DEPTH_TEST */);
+					GL11.glDepthMask(false);
+					GL11.glBlendFunc(770, 771);
+					GL11.glColor4f(1F, 1F, 1F, 1F);
+					GL11.glDisable(3008 /* GL_ALPHA_TEST */);
+	
+					mc.renderEngine.bindTexture(FlansModResourceHandler.getScope(overlayTexture));
+	
+					tessellator.startDrawingQuads();
+					tessellator.addVertexWithUV(i / 2 - 2 * j, j, -90D, 0D, 1D);
+					tessellator.addVertexWithUV(i / 2 + 2 * j, j, -90D, 1D, 1D);
+					tessellator.addVertexWithUV(i / 2 + 2 * j, 0D, -90D, 1D, 0D);
+					tessellator.addVertexWithUV(i / 2 - 2 * j, 0D, -90D, 0D, 0D);
+					tessellator.draw();
+					GL11.glDepthMask(true);
+					GL11.glEnable(2929 /* GL_DEPTH_TEST */);
+					GL11.glEnable(3008 /* GL_ALPHA_TEST */);
+					GL11.glColor4f(1F, 1F, 1F, 1F);
 				}
-			}
-
-			if(overlayTexture != null)
-			{
-				FlansModClient.minecraft.entityRenderer.setupOverlayRendering();
-				GL11.glEnable(3042 /* GL_BLEND */);
-				GL11.glDisable(2929 /* GL_DEPTH_TEST */);
-				GL11.glDepthMask(false);
-				GL11.glBlendFunc(770, 771);
-				GL11.glColor4f(1F, 1F, 1F, 1.0F);
-				GL11.glDisable(3008 /* GL_ALPHA_TEST */);
-
-				mc.renderEngine.bindTexture(FlansModResourceHandler.getScope(overlayTexture));
-
-				tessellator.startDrawingQuads();
-				tessellator.addVertexWithUV(i / 2 - 2 * j, j, -90D, 0.0D, 1.0D);
-				tessellator.addVertexWithUV(i / 2 + 2 * j, j, -90D, 1.0D, 1.0D);
-				tessellator.addVertexWithUV(i / 2 + 2 * j, 0.0D, -90D, 1.0D, 0.0D);
-				tessellator.addVertexWithUV(i / 2 - 2 * j, 0.0D, -90D, 0.0D, 0.0D);
-				tessellator.draw();
-				GL11.glDepthMask(true);
-				GL11.glEnable(2929 /* GL_DEPTH_TEST */);
-				GL11.glEnable(3008 /* GL_ALPHA_TEST */);
-				GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
 			}
 		}
 
-	    if(!event.isCancelable() && event.type == ElementType.HOTBAR && FlansMod.bulletGuiEnable)
+	    if(!event.isCancelable() && event.type == ElementType.HOTBAR)
 	    {
 			//Player ammo overlay
-			if(mc.thePlayer != null)
+			/*if(FlansMod.bulletGuiEnable && mc.thePlayer != null)
 			{
 				ItemStack stack = mc.thePlayer.inventory.getCurrentItem();
 				if(stack != null && stack.getItem() instanceof ItemGun)
@@ -174,58 +193,54 @@ public class TickHandlerClient
 					ItemGun gunItem = (ItemGun)stack.getItem();
 					GunType gunType = gunItem.type;
 					int x = 0;
-					for(int n = 0; n < gunType.getNumAmmoItemsInGun(stack); n++)
+					for(int n = 0; n < gunType.getNumAmmoItemsInGun(stack); ++n)
 					{
-						ItemStack bulletStack = ((ItemGun)stack.getItem()).getBulletItemStack(stack, n);
-						if(bulletStack != null && bulletStack.getItem() != null && bulletStack.getItemDamage() < bulletStack.getMaxDamage())
+						ShootableType bulletType = FlansModClient.getBulletItemStackClient(stack, n);
+						if(bulletType != null)// && bulletStack.getItemDamage() < bulletStack.getMaxDamage())
 						{
 							RenderHelper.enableGUIStandardItemLighting();
 							GL11.glEnable(GL12.GL_RESCALE_NORMAL);
 							OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240F, 240F);
-							drawSlotInventory(mc.fontRenderer, bulletStack, i / 2 + 16 + x, j - 65);
+							drawSlotInventory(mc.fontRenderer, new ItemStack(bulletType.item), i / 2 + 16 + x, j - 65);
 							GL11.glDisable(GL12.GL_RESCALE_NORMAL);
 							RenderHelper.disableStandardItemLighting();
-							String s = (bulletStack.getMaxDamage() - bulletStack.getItemDamage()) + "/" + bulletStack.getMaxDamage();
-							if(gunType.submode.length >= 2)
-							{
-								s = s + "[" + gunType.getFireMode(stack) + "]";
-							}
-							if(bulletStack.getMaxDamage() == 1)
+							/*String s = (bulletType.getMaxDamage() - bulletType.getItemDamage()) + "/" + bulletType.getMaxDamage();
+							if(gunType.submode.length > 1)
+								s = s + "[" + GunType.getFireMode(stack) + "]";
+							if(bulletType.getMaxDamage() == 1)
 								s = "";
-							mc.fontRenderer.drawString(s, i / 2 + 32 + x, j - 59, 0x000000);
+							mc.fontRenderer.drawString(s, i / 2 + 32 + x, j - 59, 0x000000); //mark here to learn how to draw string
 							mc.fontRenderer.drawString(s, i / 2 + 33 + x, j - 60, 0xffffff);
 							x += 16 + mc.fontRenderer.getStringWidth(s);
 						}
 					}
 					//Render secondary gun
 					PlayerData data = PlayerHandler.getPlayerData(mc.thePlayer, Side.CLIENT);
-					if(gunType.oneHanded && data.offHandGunSlot != 0)
+					if(gunType.oneHanded && data.offHandGunSlot != -1)
 					{
-						ItemStack offHandStack = mc.thePlayer.inventory.getStackInSlot(data.offHandGunSlot - 1);
+						ItemStack offHandStack = mc.thePlayer.inventory.getStackInSlot(data.offHandGunSlot);
 						if(offHandStack != null && offHandStack.getItem() instanceof ItemGun)
 						{
 							GunType offHandGunType = ((ItemGun)offHandStack.getItem()).type;
 							x = 0;
-							for(int n = 0; n < offHandGunType.getNumAmmoItemsInGun(offHandStack); n++)
+							for(int n = 0; n < offHandGunType.getNumAmmoItemsInGun(offHandStack); ++n)
 							{
-								ItemStack bulletStack = ((ItemGun)offHandStack.getItem()).getBulletItemStack(offHandStack, n);
-								if(bulletStack != null && bulletStack.getItem() != null && bulletStack.getItemDamage() < bulletStack.getMaxDamage())
+								ShootableType bulletType = FlansModClient.getBulletItemStackClient(offHandStack, n);
+								if(bulletType != null)
 								{
 									//Find the string we are displaying next to the ammo item
-									String s = (bulletStack.getMaxDamage() - bulletStack.getItemDamage()) + "/" + bulletStack.getMaxDamage();
-									if(gunType.submode.length >= 2)
-									{
-										s = s + "[" + gunType.getFireMode(offHandStack) + "]";
-									}
-									if(bulletStack.getMaxDamage() == 1)
+									String s = (bulletType.getMaxDamage() - bulletType.getItemDamage()) + "/" + bulletType.getMaxDamage();
+									if(gunType.submode.length > 1)
+										s = s + "[" + GunType.getFireMode(offHandStack) + "]";
+									if(bulletType.getMaxDamage() == 1)
 										s = "";
 
 									//Draw the slot and then move leftwards
 									RenderHelper.enableGUIStandardItemLighting();
-									GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+									GL11.glColor4f(1F, 1F, 1F, 1F);
 									GL11.glEnable(GL12.GL_RESCALE_NORMAL);
 									OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240F, 240F);
-									drawSlotInventory(mc.fontRenderer, bulletStack, i / 2 - 32 - x, j - 65);
+									drawSlotInventory(mc.fontRenderer, bulletType, i / 2 - 32 - x, j - 65);
 									x += 16 + mc.fontRenderer.getStringWidth(s);
 
 									//Draw the string
@@ -238,17 +253,56 @@ public class TickHandlerClient
 						}
 					}
 				}
-			}
-
+			}*/
+			
 			PacketTeamInfo teamInfo = FlansModClient.teamInfo;
-
+			
+			//if(FlansMod.enableStaminaSystem)
+			//{
+				GL11.glEnable(3042 /* GL_BLEND */);
+				GL11.glDisable(2929 /* GL_DEPTH_TEST */);
+				GL11.glDepthMask(false);
+				GL11.glBlendFunc(770, 771);
+				GL11.glColor4f(1F, 1F, 1F, 1F);
+				GL11.glDisable(3008 /* GL_ALPHA_TEST */);
+				
+				mc.renderEngine.bindTexture(stateBar);
+				//stamina reference dot
+				tessellator.startDrawingQuads();
+				tessellator.addVertexWithUV(i * 0.7F, j * 0.98F, -90D, 0D / 256D, 4D / 16D);
+				tessellator.addVertexWithUV(i, j * 0.98F, -90D, 256D / 256D, 4D / 16D);
+				tessellator.addVertexWithUV(i, j * 0.97F, -90D, 256D / 256D, 0D / 16D);
+				tessellator.addVertexWithUV(i * 0.7F, j * 0.97F, -90D, 0D / 256D, 0D / 16D);
+				tessellator.draw();
+				//stamina bar
+				float tempFloat = FlansModClient.lastCurrentStamina + (FlansModClient.currentStamina - FlansModClient.lastCurrentStamina) * event.partialTicks;
+				tessellator.startDrawingQuads();
+				tessellator.addVertexWithUV(i * 0.702F, j * 0.965F, -90D, 0D / 256D, 16D / 16D);
+				tessellator.addVertexWithUV(i * (0.702F + 0.282F * tempFloat), j * 0.965F, -90D, 256D / 256D, 16D / 16D);
+				tessellator.addVertexWithUV(i * (0.702F + 0.282F * tempFloat), j * 0.958F, -90D, 256D / 256D, 10D / 16D);
+				tessellator.addVertexWithUV(i * 0.702F, j * 0.958F, -90D, 0D / 256D, 10D / 16D);
+				tessellator.draw();
+				//air bar
+				tempFloat = FlansModClient.lastCurrentAir + (FlansModClient.currentAir - FlansModClient.lastCurrentAir) * event.partialTicks;
+				tessellator.startDrawingQuads();
+				tessellator.addVertexWithUV(i * 0.702F, j * 0.952F, -90D, 0D / 256D, 10D / 16D);
+				tessellator.addVertexWithUV(i * (0.702F + 0.282F * tempFloat), j * 0.952F, -90D, 256D / 256D, 10D / 16D);
+				tessellator.addVertexWithUV(i * (0.702F + 0.282F * tempFloat), j * 0.945F, -90D, 256D / 256D, 4D / 16D);
+				tessellator.addVertexWithUV(i * 0.702F, j * 0.945F, -90D, 0D / 256D, 4D / 16D);
+				tessellator.draw();
+				
+				GL11.glDepthMask(true);
+				GL11.glEnable(2929 /* GL_DEPTH_TEST */);
+				GL11.glEnable(3008 /* GL_ALPHA_TEST */);
+			//}
+			
 			if(teamInfo != null && FlansModClient.minecraft.thePlayer != null && (teamInfo.numTeams > 0 || !teamInfo.sortedByTeam) && teamInfo.getPlayerScoreData(FlansModClient.minecraft.thePlayer.getCommandSenderName()) != null)
 			{
 				GL11.glEnable(3042 /* GL_BLEND */);
 				GL11.glDisable(2929 /* GL_DEPTH_TEST */);
 				GL11.glDepthMask(false);
 				GL11.glBlendFunc(770, 771);
-				GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+				GL11.glColor4f(1F, 1F, 1F, 1F);
 				GL11.glDisable(3008 /* GL_ALPHA_TEST */);
 
 				mc.renderEngine.bindTexture(GuiTeamScores.texture);
@@ -310,25 +364,25 @@ public class TickHandlerClient
 				GL11.glDepthMask(true);
 				GL11.glEnable(2929 /* GL_DEPTH_TEST */);
 				GL11.glEnable(3008 /* GL_ALPHA_TEST */);
-				GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+				GL11.glColor4f(1F, 1F, 1F, 1F);
 				String playerUsername = FlansModClient.minecraft.thePlayer.getCommandSenderName();
 
 				mc.fontRenderer.drawString(teamInfo.getPlayerScoreData(playerUsername).score + "", i / 2 - 7, 1, 0x000000);
 				mc.fontRenderer.drawString(teamInfo.getPlayerScoreData(playerUsername).kills + "", i / 2 - 7, 9, 0x000000);
 				mc.fontRenderer.drawString(teamInfo.getPlayerScoreData(playerUsername).deaths + "", i / 2 - 7, 17, 0x000000);
 			}
-			for (KillMessage killMessage : killMessages) {
+			//marked here to disable show killers
+			for(KillMessage killMessage : killMessages)
 				mc.fontRenderer.drawString("\u00a7" + killMessage.killerName + "     " + "\u00a7" + killMessage.killedName, i - mc.fontRenderer.getStringWidth(killMessage.killerName + "     " + killMessage.killedName) - 6, j - 32 - killMessage.line * 16, 0xffffff);
-			}
 
 			//Draw icons indicated weapons used
 			RenderHelper.enableGUIStandardItemLighting();
-			GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+			GL11.glColor4f(1F, 1F, 1F, 1F);
 			GL11.glEnable(GL12.GL_RESCALE_NORMAL);
 			OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240F, 240F);
-			for (KillMessage killMessage : killMessages) {
+			for(KillMessage killMessage : killMessages)
 				drawSlotInventory(mc.fontRenderer, new ItemStack(killMessage.weapon.item), i - mc.fontRenderer.getStringWidth("     " + killMessage.killedName) - 12, j - 36 - killMessage.line * 16);
-			}
+			
 			GL11.glDisable(3042 /*GL_BLEND*/);
 			RenderHelper.disableStandardItemLighting();
 
@@ -338,11 +392,12 @@ public class TickHandlerClient
 			ItemStack currentStack = mc.thePlayer.inventory.getCurrentItem();
 			PlayerData data = PlayerHandler.getPlayerData(mc.thePlayer, Side.CLIENT);
 
+			/** for offhand gun, out dated
 			if(currentStack != null && currentStack.getItem() instanceof ItemGun && ((ItemGun)currentStack.getItem()).type.oneHanded)
 			{
 				for(int n = 0; n < 9; n++)
 				{
-					if(data.offHandGunSlot == n + 1)
+					if(data.offHandGunSlot == n)
 					{
 						tessellator.startDrawingQuads();
 						tessellator.addVertexWithUV(i / 2 - 88 + 20 * n, j - 3, -90D, 16D / 64D, 16D / 32D);
@@ -351,7 +406,7 @@ public class TickHandlerClient
 						tessellator.addVertexWithUV(i / 2 - 88 + 20 * n, j - 19, -90D, 16D / 64D, 0D / 32D);
 						tessellator.draw();
 					}
-					else if(data.isValidOffHandWeapon(mc.thePlayer, n + 1))
+					else if(data.isValidOffHandWeapon(mc.thePlayer, n))
 					{
 						tessellator.startDrawingQuads();
 						tessellator.addVertexWithUV(i / 2 - 88 + 20 * n, j - 3, -90D, 0D / 64D, 16D / 32D);
@@ -361,91 +416,70 @@ public class TickHandlerClient
 						tessellator.draw();
 					}
 				}
-			}
+			}*/
 			//RenderHitCrossHair
 			if(EntityBullet.hitCrossHair)
 			{
 				tickcount = 20;
 				EntityBullet.hitCrossHair = false;
 			}
-			EntityPlayer player = Minecraft.getMinecraft().thePlayer;
-			ItemStack currentHeldItem = player.getCurrentEquippedItem();
-			if(tickcount > 0 && FlansMod.hitCrossHairEnable == true && currentHeldItem != null && currentHeldItem.getItem() instanceof ItemGun)
+			if(FlansMod.hitCrossHairEnable && tickcount > 0)
 			{
 				ItemStack stack = mc.thePlayer.inventory.getCurrentItem();
-				ItemGun gunItem = (ItemGun)stack.getItem();
-				GunType gunType = gunItem.type;
-				FlansModClient.minecraft.entityRenderer.setupOverlayRendering();
-				GL11.glEnable(3042 /* GL_BLEND */);
-				GL11.glDisable(2929 /* GL_DEPTH_TEST */);
-				GL11.glDepthMask(false);
-				GL11.glBlendFunc(770, 771);
-				GL11.glColor4f(
-						FlansMod.hitCrossHairColor[1],
-						FlansMod.hitCrossHairColor[2],
-						FlansMod.hitCrossHairColor[3],
-						FlansMod.hitCrossHairColor[0] * (float)tickcount / 20);
-				GL11.glDisable(3008 /* GL_ALPHA_TEST */);
-				//Custom hit marker GUI if set in gun config
-				if(gunType.hitTexture != null)
+				if(stack != null && stack.getItem() instanceof ItemGun)
 				{
-					mc.renderEngine.bindTexture(FlansModResourceHandler.getAuxiliaryTexture(gunType.hitTexture));
+					GunType gunType = ((ItemGun)stack.getItem()).type;
+					FlansModClient.minecraft.entityRenderer.setupOverlayRendering();
+					GL11.glEnable(GL11.GL_BLEND);
+					GL11.glDisable(GL11.GL_DEPTH_TEST);
+					GL11.glDepthMask(false);
+					GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+					GL11.glColor4f(1F, 1F, 1F, tickcount / 20F);
+					GL11.glDisable(GL11.GL_ALPHA_TEST);
+					//Custom hit marker GUI if set in gun config
+					if(gunType.hitTexture != null)
+						mc.renderEngine.bindTexture(FlansModResourceHandler.getAuxiliaryTexture(gunType.hitTexture));
+					else //Default hit marker GUI
+						mc.renderEngine.bindTexture(new ResourceLocation("flansmod", FlansMod.hdHitCrosshair ? "gui/HDCrossHair.png" : "gui/CrossHair.png"));
+					
+					tessellator.startDrawingQuads();
+					tessellator.addVertexWithUV(i / 2 - 2 * j, j, -90D, 0D, 1D);
+					tessellator.addVertexWithUV(i / 2 + 2 * j, j, -90D, 1D, 1D);
+					tessellator.addVertexWithUV(i / 2 + 2 * j, 0D, -90D, 1D, 0D);
+					tessellator.addVertexWithUV(i / 2 - 2 * j, 0D, -90D, 0D, 0D);
+					tessellator.draw();
+					GL11.glDepthMask(true);
+					GL11.glEnable(GL11.GL_DEPTH_TEST);
+					GL11.glEnable(GL11.GL_ALPHA_TEST);
+					GL11.glColor4f(1F, 1F, 1F, 1F);
 				}
-				//Default hit marker GUI
-				else if (FlansMod.hdHitCrosshair == true)
-				{
-					mc.renderEngine.bindTexture(new ResourceLocation("flansmod", "gui/HDCrossHair.png"));
-				}
-				else
-				{
-					mc.renderEngine.bindTexture(new ResourceLocation("flansmod", "gui/CrossHair.png"));
-				}
-				
-				tessellator.startDrawingQuads();
-				tessellator.addVertexWithUV(i / 2 - 2 * j, j, -90D, 0.0D, 1.0D);
-				tessellator.addVertexWithUV(i / 2 + 2 * j, j, -90D, 1.0D, 1.0D);
-				tessellator.addVertexWithUV(i / 2 + 2 * j, 0.0D, -90D, 1.0D, 0.0D);
-				tessellator.addVertexWithUV(i / 2 - 2 * j, 0.0D, -90D, 0.0D, 0.0D);
-				tessellator.draw();
-				GL11.glDepthMask(true);
-				GL11.glEnable(2929 /* GL_DEPTH_TEST */);
-				GL11.glEnable(3008 /* GL_ALPHA_TEST */);
-				GL11.glColor4f(1F, 1F, 1F, 1F);
 			}
-
+			//render hurt red screen
 			if(mc.thePlayer.hurtTime > 0)
-			{
 				tickcountWounded = 40;
-			}
 			if(tickcountWounded > 0)
 			{
-				FlansModClient.minecraft.entityRenderer.setupOverlayRendering();
-				GL11.glEnable(3042 /* GL_BLEND */);
-				GL11.glDisable(2929 /* GL_DEPTH_TEST */);
+				mc.entityRenderer.setupOverlayRendering();
+				GL11.glEnable(GL11.GL_BLEND);
+				GL11.glDisable(GL11.GL_DEPTH_TEST);
 				GL11.glDepthMask(false);
-				GL11.glBlendFunc(770, 771);
-				GL11.glColor4f(
-						FlansMod.hitCrossHairColor[1],
-						FlansMod.hitCrossHairColor[2],
-						FlansMod.hitCrossHairColor[3],
-						FlansMod.hitCrossHairColor[0] * (float)tickcountWounded / 20);
-				GL11.glDisable(3008 /* GL_ALPHA_TEST */);
+				GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+				GL11.glColor4f(1F, 1F, 1F, tickcountWounded / 20);
+				GL11.glDisable(GL11.GL_ALPHA_TEST);
 
 				mc.renderEngine.bindTexture(new ResourceLocation("flansmod", "gui/Blood.png"));
 
 				tessellator.startDrawingQuads();
-				tessellator.addVertexWithUV(i / 2 - 2 * j, j, -90D, 0.0D, 1.0D);
-				tessellator.addVertexWithUV(i / 2 + 2 * j, j, -90D, 1.0D, 1.0D);
-				tessellator.addVertexWithUV(i / 2 + 2 * j, 0.0D, -90D, 1.0D, 0.0D);
-				tessellator.addVertexWithUV(i / 2 - 2 * j, 0.0D, -90D, 0.0D, 0.0D);
+				tessellator.addVertexWithUV(i / 2 - 2 * j, j, -90D, 0D, 1D);
+				tessellator.addVertexWithUV(i / 2 + 2 * j, j, -90D, 1D, 1D);
+				tessellator.addVertexWithUV(i / 2 + 2 * j, 0D, -90D, 1D, 0D);
+				tessellator.addVertexWithUV(i / 2 - 2 * j, 0D, -90D, 0D, 0D);
 				tessellator.draw();
 				GL11.glDepthMask(true);
-				GL11.glEnable(2929 /* GL_DEPTH_TEST */);
-				GL11.glEnable(3008 /* GL_ALPHA_TEST */);
+				GL11.glEnable(GL11.GL_DEPTH_TEST);
+				GL11.glEnable(GL11.GL_ALPHA_TEST);
 				GL11.glColor4f(1F, 1F, 1F, 1F);
 			}
-
-
 
 			//DEBUG vehicles
 			if(mc.thePlayer.ridingEntity instanceof EntitySeat)
@@ -454,17 +488,12 @@ public class TickHandlerClient
 				float speed = (float) (ent.motionX * ent.motionX + ent.motionY * ent.motionY + ent.motionZ * ent.motionZ);
 				int healthP = (int)((float)ent.getDriveableData().parts.get(EnumDriveablePart.core).health / (float)ent.getDriveableData().parts.get(EnumDriveablePart.core).maxHealth * 100);
 				int colour = 0;
-				if(healthP > 75){
-					colour = 0xffffff;
-				} else if (healthP < 75 && healthP > 50){
-					colour = 0x00ff00;
-				} else if (healthP < 50 && healthP > 25){
-					colour = 0xdaa520;
-				} else {
-					colour = 0xff0000;
-				}
+				if(healthP > 75) colour = 0xffffff;
+				else if (healthP < 75 && healthP > 50) colour = 0x00ff00;
+				else if (healthP < 50 && healthP > 25) colour = 0xdaa520;
+				else colour = 0xff0000;
 				mc.fontRenderer.drawString(String.format("Throttle : %.0f%%", ent.throttle*100), 2, 2, 0xffffff);
-//				mc.fontRenderer.drawString("Throttle : " + ent.throttle, 2, 2, 0xffffff);
+				//mc.fontRenderer.drawString("Throttle : " + ent.throttle, 2, 2, 0xffffff);
 				//mc.fontRenderer.drawString("Health : " + ent.getDriveableData().parts.get(EnumDriveablePart.core).health+ " / " +ent.getDriveableData().parts.get(EnumDriveablePart.core).maxHealth, 2, 12, 0xffffff);
 				mc.fontRenderer.drawString("Health : " + healthP + "%" , 2, 12, colour);
 				mc.fontRenderer.drawString(String.format("Speed : %.2f", Math.sqrt(speed)), 2, 22, 0xffffff);
@@ -507,12 +536,12 @@ public class TickHandlerClient
 					{
 						if(((EntityVehicle)ent).varDoor){
 							mc.fontRenderer.drawString("Weapon : READY"  , 2, 62, 0x00ff00);
-							mc.fontRenderer.drawString("["+ Keyboard.getKeyName(KeyInputHandler.doorKey.getKeyCode())+ " to disable]", 100, 62, 0x00ff00);
+							mc.fontRenderer.drawString("["+ Keyboard.getKeyName(KeyInputHandler.FlanVKeyBinding.V_DOOR.keyCode())+ " to disable]", 100, 62, 0x00ff00);
 						}
 
 						if(!((EntityVehicle)ent).varDoor){
 							mc.fontRenderer.drawString("Weapon : DISABLED"  , 2, 62, 0xff0000);
-							mc.fontRenderer.drawString("["+ Keyboard.getKeyName(KeyInputHandler.doorKey.getKeyCode())+ " to activate]", 100, 62, 0xff0000);
+							mc.fontRenderer.drawString("["+ Keyboard.getKeyName(KeyInputHandler.FlanVKeyBinding.V_DOOR.keyCode())+ " to activate]", 100, 62, 0xff0000);
 						}
 					}
 				}
@@ -533,13 +562,12 @@ public class TickHandlerClient
 	{
 		switch(event.phase)
 		{
-		case START :
-			RenderGun.smoothing = event.renderTickTime;
-			renderTickStart(Minecraft.getMinecraft(), event.renderTickTime);
-			break;
-		case END :
-			renderTickEnd(Minecraft.getMinecraft());
-			break;
+			case START:
+				renderTickStart(Minecraft.getMinecraft(), event.renderTickTime);
+				break;
+			case END:
+				renderTickEnd(Minecraft.getMinecraft());
+			default:;
 		}
 	}
 
@@ -548,198 +576,47 @@ public class TickHandlerClient
 	{
 		switch(event.phase)
 		{
-		case START :
-			clientTickStart(Minecraft.getMinecraft());
-			break;
-		case END :
-			clientTickEnd(Minecraft.getMinecraft());
-			break;
+			case START :
+				clientTickStart(Minecraft.getMinecraft());
+				break;
+			case END :
+				clientTickEnd(Minecraft.getMinecraft());
+			default:;
 		}
-	}
-
-	/** Handle flashlight block light override */
-	public void clientTickStart(Minecraft mc)
-	{
-		if(tickcount > 0)
-		{
-			tickcount--;
-		}
-		if(tickcountWounded > 0)
-		{
-			tickcountWounded--;
-		}
-		if(FlansMod.ticker % lightOverrideRefreshRate == 0 && mc.theWorld != null)
-		{
-			//Check graphics setting and adjust refresh rate
-			lightOverrideRefreshRate = mc.gameSettings.fancyGraphics ? 10 : 20;
-
-			//Reset old light values
-			for(Vector3i v : blockLightOverrides)
-			{
-				mc.theWorld.updateLightByType(EnumSkyBlock.Block, v.x, v.y, v.z);
-			}
-			//Clear the list
-			blockLightOverrides.clear();
-
-			//Find all flashlights
-			for(Object obj : mc.theWorld.playerEntities)
-			{
-				EntityPlayer player = (EntityPlayer)obj;
-				ItemStack currentHeldItem = player.getCurrentEquippedItem();
-				if(currentHeldItem != null && currentHeldItem.getItem() instanceof ItemGun)
-				{
-					GunType type = ((ItemGun)currentHeldItem.getItem()).type;
-					AttachmentType grip = type.getGrip(currentHeldItem);
-					if(grip != null && grip.flashlight)
-					{
-						for(int i = 0; i < 2; i++)
-						{
-							MovingObjectPosition ray = player.rayTrace(grip.flashlightRange / 2F * (i + 1), 1F);
-							if(ray != null)
-							{
-								int x = ray.blockX;
-								int y = ray.blockY;
-								int z = ray.blockZ;
-								int side = ray.sideHit;
-								switch(side)
-								{
-								case 0 : y--; break;
-								case 1 : y++; break;
-								case 2 : z--; break;
-								case 3 : z++; break;
-								case 4 : x--; break;
-								case 5 : x++; break;
-								}
-								blockLightOverrides.add(new Vector3i(x, y, z));
-								mc.theWorld.setLightValue(EnumSkyBlock.Block, x, y, z, 12);
-								mc.theWorld.updateLightByType(EnumSkyBlock.Block, x, y + 1, z);
-								mc.theWorld.updateLightByType(EnumSkyBlock.Block, x, y - 1, z);
-								mc.theWorld.updateLightByType(EnumSkyBlock.Block, x + 1, y, z);
-								mc.theWorld.updateLightByType(EnumSkyBlock.Block, x - 1, y, z);
-								mc.theWorld.updateLightByType(EnumSkyBlock.Block, x, y, z + 1);
-								mc.theWorld.updateLightByType(EnumSkyBlock.Block, x, y, z - 1);
-							}
-						}
-					}
-				}
-			}
-
-			for(Object obj : mc.theWorld.loadedEntityList)
-			{
-				if(obj instanceof EntityBullet)
-				{
-					EntityBullet bullet = (EntityBullet)obj;
-					//IDynamicLightSource iDynamicLightSource = new AddFlansLightSource((Entity)bullet,15);
-					if(!bullet.isDead && bullet.type.hasLight)
-					{
-						/*int x = MathHelper.floor_double(bullet.posX);
-						int y = MathHelper.floor_double(bullet.posY);
-						int z = MathHelper.floor_double(bullet.posZ);
-						blockLightOverrides.add(new Vector3i(x, y, z));
-						mc.theWorld.setLightValue(EnumSkyBlock.Block, x, y, z, 15);
-						mc.theWorld.updateLightByType(EnumSkyBlock.Block, x, y + 1, z);
-						mc.theWorld.updateLightByType(EnumSkyBlock.Block, x, y - 1, z);
-						mc.theWorld.updateLightByType(EnumSkyBlock.Block, x + 1, y, z);
-						mc.theWorld.updateLightByType(EnumSkyBlock.Block, x - 1, y, z);
-						mc.theWorld.updateLightByType(EnumSkyBlock.Block, x, y, z + 1);
-						mc.theWorld.updateLightByType(EnumSkyBlock.Block, x, y, z - 1);*/
-						//DynamicLights.addLightSource(iDynamicLightSource);
-					}else if(bullet.isDead && bullet.type.hasLight){
-						//DynamicLights.removeLightSource(iDynamicLightSource);
-					}
-				}
-				else if(obj instanceof EntityMecha)
-				{
-					EntityMecha mecha = (EntityMecha)obj;
-					int x = MathHelper.floor_double(mecha.posX);
-					int y = MathHelper.floor_double(mecha.posY);
-					int z = MathHelper.floor_double(mecha.posZ);
-					if(mecha.lightLevel() > 0)
-					{
-						blockLightOverrides.add(new Vector3i(x, y, z));
-						mc.theWorld.setLightValue(EnumSkyBlock.Block, x, y, z, Math.max(mc.theWorld.getBlockLightValue(x, y, z), mecha.lightLevel()));
-						mc.theWorld.updateLightByType(EnumSkyBlock.Block, x + 1, y, z);
-						mc.theWorld.updateLightByType(EnumSkyBlock.Block, x - 1, y + 1, z);
-						mc.theWorld.updateLightByType(EnumSkyBlock.Block, x, y + 1, z);
-						mc.theWorld.updateLightByType(EnumSkyBlock.Block, x, y - 1, z);
-						mc.theWorld.updateLightByType(EnumSkyBlock.Block, x, y, z + 1);
-						mc.theWorld.updateLightByType(EnumSkyBlock.Block, x, y, z - 1);
-					}
-					if(mecha.forceDark())
-					{
-						for(int i = -3; i <= 3; i++)
-						{
-							for(int j = -3; j <= 3; j++)
-							{
-								for(int k = -3; k <= 3; k++)
-								{
-									int xd = i + x;
-									int yd = j + y;
-									int zd = k + z;
-									blockLightOverrides.add(new Vector3i(xd, yd, zd));
-									mc.theWorld.setLightValue(EnumSkyBlock.Sky, xd, yd, zd, Math.abs(i) + Math.abs(j) + Math.abs(k));
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-		
-		if(FlansMod.ticker % vehicleLightOverrideRefreshRate == 0 && mc.theWorld != null)
-		{
-			//Check graphics setting and adjust refresh rate
-			vehicleLightOverrideRefreshRate = mc.gameSettings.fancyGraphics ? 1 : 2;
-
-			//Reset old light values
-			for(Vector3i v : vehicleLightOverrides)
-			{
-				mc.theWorld.updateLightByType(EnumSkyBlock.Block, v.x, v.y, v.z);
-			}
-			//Clear the list
-			vehicleLightOverrides.clear();
-		}
-	}
-
-	public void clientTickEnd(Minecraft minecraft)
-	{ /* Client side only */
-		for(int i = 0; i < killMessages.size(); i++)
-		{
-			killMessages.get(i).timer--;
-			if(killMessages.get(i).timer == 0)
-			{
-				killMessages.remove(i);
-			}
-		}
-		RenderFlag.angle += 2F;
-		FlansModClient.tick();
 	}
 
 	public void renderTickStart(Minecraft mc, float smoothing)
 	{
 		// CAPTURE MOUSE INPUT!
-		if (mc.currentScreen == null && FlansModClient.controlModeMouse)
+		if(mc.currentScreen == null && FlansModClient.controlModeMouse)
 		{
 			MouseHelper mouse = mc.mouseHelper;
 			Entity ridden = mc.thePlayer.ridingEntity;
 
-			if (ridden instanceof EntityDriveable)
+			if(ridden instanceof EntityDriveable)
 			{
 				EntityDriveable entity = (EntityDriveable) ridden;
 				entity.onMouseMoved(mouse.deltaX, mouse.deltaY);
 			}
 		}
-		FlansModClient.renderTick(smoothing);
+		if(mc.thePlayer != null)
+		{
+			RenderFlan.smoothing = smoothing;
+			ItemStack holdingStack = mc.thePlayer.getHeldItem();
+			if(holdingStack != null && holdingStack.getItem() instanceof ItemGun)
+			{
+				RenderGun.gunTypeOfScopeToRender = ((ItemGun)(RenderGun.scopeToRenderGunStack = holdingStack).getItem()).type;
+				RenderGun.renderTickStart();
+			}
+			FlansModClient.renderTick(smoothing);
+		}
 
 		if(mc.currentScreen instanceof GuiDriveableController)
 		{
 			guiDriveableController = mc.currentScreen;
 			mc.currentScreen = null;
 		}
-		else
-		{
-			guiDriveableController = null;
-		}
+		else guiDriveableController = null;
 	}
 
 	public void renderTickEnd(Minecraft mc)
@@ -756,21 +633,24 @@ public class TickHandlerClient
 		int j = scaledresolution.getScaledHeight();
 
 		//FlashBan
-		if(FlansModClient.isInFlash){
+		/** TODO
+		if(FlansMod.isInFlash)
+		{
 			isInFlash = true;
-			flashTime = FlansModClient.flashTime;
+			flashTime = FlansMod.flashTime;
 			tickcountflash = 0;
-			FlansModClient.isInFlash = false;
-			FlansModClient.flashTime = 0;
+			FlansMod.isInFlash = false;
+			FlansMod.flashTime = 0;
 		}
-		if(isInFlash && tickcountflash < flashTime){
+		if(isInFlash && tickcountflash < flashTime)
+		{
 			FlansModClient.minecraft.entityRenderer.setupOverlayRendering();
-			GL11.glEnable(3042 /* GL_BLEND */);
-			GL11.glDisable(2929 /* GL_DEPTH_TEST */);
+			GL11.glEnable(3042 /* GL_BLEND /);
+			GL11.glDisable(2929 /* GL_DEPTH_TEST /);
 			GL11.glDepthMask(false);
 			GL11.glBlendFunc(770, 771);
 			GL11.glColor4f(1F, 1F, 1F, 1.0F);
-			GL11.glDisable(3008 /* GL_ALPHA_TEST */);
+			GL11.glDisable(3008 /* GL_ALPHA_TEST /);
 
 			mc.renderEngine.bindTexture(new ResourceLocation("flansmod", "gui/flash.png"));
 
@@ -781,16 +661,18 @@ public class TickHandlerClient
 			tessellator.addVertexWithUV(i / 2 - 2 * j, 0.0D, -90D, 0.0D, 0.0D);
 			tessellator.draw();
 			GL11.glDepthMask(true);
-			GL11.glEnable(2929 /* GL_DEPTH_TEST */);
-			GL11.glEnable(3008 /* GL_ALPHA_TEST */);
+			GL11.glEnable(2929 /* GL_DEPTH_TEST /);
+			GL11.glEnable(3008 /* GL_ALPHA_TEST /);
 			GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
 			//System.out.println(mc.gameSettings.hideGUI);
 			tickcountflash++;
-		}else{
+		}
+		else
+		{
 			isInFlash = false;
 			flashTime = 0;
 			tickcountflash = 0;
-		}
+		}*/
 		/*
 		ScaledResolution scaledresolution = new ScaledResolution(FlansModClient.minecraft, FlansModClient.minecraft.displayWidth, FlansModClient.minecraft.displayHeight);
 		int i = scaledresolution.getScaledWidth();
@@ -835,6 +717,138 @@ public class TickHandlerClient
 			GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
 		}
 		*/
+	}
+
+	/** Handle flashlight block light override */
+	public void clientTickStart(Minecraft mc)
+	{
+		if(tickcount > 0) --tickcount;
+		if(tickcountWounded > 0) --tickcountWounded;
+		//change config settings to change flash refresh rate
+		if(FlansMod.ticker % FlansMod.flashRefreshRate == 0 && mc.theWorld != null)
+		{	//Reset old light values
+			for(Vector3i v : blockLightOverrides) mc.theWorld.updateLightByType(EnumSkyBlock.Block, v.x, v.y, v.z);
+			blockLightOverrides.clear(); //Clear the list
+			for(Object obj : mc.theWorld.playerEntities) //Find all flashlights
+			{
+				EntityPlayer player = (EntityPlayer)obj;
+				ItemStack currentHeldItem = player.getCurrentEquippedItem();
+				if(currentHeldItem != null && currentHeldItem.getItem() instanceof ItemGun && GunType.hasStates(currentHeldItem))
+				{
+					int[] states = GunType.getStates(currentHeldItem);
+					float flashlightRange = GunType.getState(states, GunTag.LIGHT_RANGE);
+					if(flashlightRange < 0F) continue;
+					//if this player is player on playing, use values from FlansModClient
+					MovingObjectPosition ray = player == mc.thePlayer ? ItemGun.rayTrace(player, flashlightRange, false) 
+							: player.rayTrace(GunType.getTOF(states, GunTag.RUN_POSE_ON) ? 1F : flashlightRange, 1F);
+					if(ray == null) continue; // if ray exists, then apply the light
+					int x = ray.blockX;
+					int y = ray.blockY;
+					int z = ray.blockZ;
+					int side = ray.sideHit;
+					switch(side)
+					{
+						case 0: --y; break;
+						case 1: ++y; break;
+						case 2: --z; break;
+						case 3: ++z; break;
+						case 4: --x; break;
+						case 5: ++x;
+					}
+					blockLightOverrides.add(new Vector3i(x, y, z));
+					mc.theWorld.setLightValue(EnumSkyBlock.Block, x, y, z, 12);
+					mc.theWorld.updateLightByType(EnumSkyBlock.Block, x, y + 1, z);
+					mc.theWorld.updateLightByType(EnumSkyBlock.Block, x, y - 1, z);
+					mc.theWorld.updateLightByType(EnumSkyBlock.Block, x + 1, y, z);
+					mc.theWorld.updateLightByType(EnumSkyBlock.Block, x - 1, y, z);
+					mc.theWorld.updateLightByType(EnumSkyBlock.Block, x, y, z + 1);
+					mc.theWorld.updateLightByType(EnumSkyBlock.Block, x, y, z - 1);
+				}
+			}
+
+			for(Object obj : mc.theWorld.loadedEntityList)
+			{
+				if(obj instanceof EntityBullet)
+				{
+					EntityBullet bullet = (EntityBullet)obj;
+					//IDynamicLightSource iDynamicLightSource = new AddFlansLightSource((Entity)bullet,15);
+					if(!bullet.isDead && bullet.type.hasLight)
+					{
+						/*int x = MathHelper.floor_double(bullet.posX);
+						int y = MathHelper.floor_double(bullet.posY);
+						int z = MathHelper.floor_double(bullet.posZ);
+						blockLightOverrides.add(new Vector3i(x, y, z));
+						mc.theWorld.setLightValue(EnumSkyBlock.Block, x, y, z, 15);
+						mc.theWorld.updateLightByType(EnumSkyBlock.Block, x, y + 1, z);
+						mc.theWorld.updateLightByType(EnumSkyBlock.Block, x, y - 1, z);
+						mc.theWorld.updateLightByType(EnumSkyBlock.Block, x + 1, y, z);
+						mc.theWorld.updateLightByType(EnumSkyBlock.Block, x - 1, y, z);
+						mc.theWorld.updateLightByType(EnumSkyBlock.Block, x, y, z + 1);
+						mc.theWorld.updateLightByType(EnumSkyBlock.Block, x, y, z - 1);*/
+						//DynamicLights.addLightSource(iDynamicLightSource);
+					}
+					else if(bullet.isDead && bullet.type.hasLight) { /*DynamicLights.removeLightSource(iDynamicLightSource);*/ }
+				}
+				else if(obj instanceof EntityMecha)
+				{
+					EntityMecha mecha = (EntityMecha)obj;
+					int x = MathHelper.floor_double(mecha.posX);
+					int y = MathHelper.floor_double(mecha.posY);
+					int z = MathHelper.floor_double(mecha.posZ);
+					if(mecha.lightLevel() > 0)
+					{
+						blockLightOverrides.add(new Vector3i(x, y, z));
+						mc.theWorld.setLightValue(EnumSkyBlock.Block, x, y, z, Math.max(mc.theWorld.getBlockLightValue(x, y, z), mecha.lightLevel()));
+						mc.theWorld.updateLightByType(EnumSkyBlock.Block, x + 1, y, z);
+						mc.theWorld.updateLightByType(EnumSkyBlock.Block, x - 1, y + 1, z);
+						mc.theWorld.updateLightByType(EnumSkyBlock.Block, x, y + 1, z);
+						mc.theWorld.updateLightByType(EnumSkyBlock.Block, x, y - 1, z);
+						mc.theWorld.updateLightByType(EnumSkyBlock.Block, x, y, z + 1);
+						mc.theWorld.updateLightByType(EnumSkyBlock.Block, x, y, z - 1);
+					}
+					if(mecha.forceDark())
+					{
+						for(int i = -3, j, k, xd, yd, zd; i <= 3; ++i)
+						{
+							for(j = -3; j <= 3; ++j)
+							{
+								for(k = -3; k <= 3; ++k)
+								{
+									blockLightOverrides.add(new Vector3i(xd = i + x, yd = j + y, zd = k + z));
+									mc.theWorld.setLightValue(EnumSkyBlock.Sky, xd, yd, zd, Math.abs(i) + Math.abs(j) + Math.abs(k));
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		
+		if(FlansMod.ticker % vehicleLightOverrideRefreshRate == 0 && mc.theWorld != null)
+		{
+			//Check graphics setting and adjust refresh rate
+			vehicleLightOverrideRefreshRate = mc.gameSettings.fancyGraphics ? 1 : 2;
+
+			//Reset old light values
+			for(Vector3i v : vehicleLightOverrides)
+				mc.theWorld.updateLightByType(EnumSkyBlock.Block, v.x, v.y, v.z);
+			//Clear the list
+			vehicleLightOverrides.clear();
+		}
+	}
+
+	public void clientTickEnd(Minecraft minecraft)
+	{ /* Client side only */
+		for(int i = 0; i < killMessages.size(); i++)
+		{
+			killMessages.get(i).timer--;
+			if(killMessages.get(i).timer == 0)
+			{
+				killMessages.remove(i);
+			}
+		}
+		RenderFlag.angle += 2F;
+		FlansModClient.tick();
 	}
 
 	private void drawSlotInventory(FontRenderer fontRenderer, ItemStack itemstack, int i, int j)

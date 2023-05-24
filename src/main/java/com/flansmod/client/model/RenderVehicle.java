@@ -2,22 +2,9 @@ package com.flansmod.client.model;
 
 import org.lwjgl.opengl.GL11;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.entity.Render;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.item.EntityItem;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.AxisAlignedBB;
-import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.client.IItemRenderer;
-import net.minecraftforge.client.IItemRenderer.ItemRenderType;
-import net.minecraftforge.client.IItemRenderer.ItemRendererHelper;
-
 import com.flansmod.client.FlansModResourceHandler;
-import com.flansmod.client.tmt.ModelRendererTurbo;
 import com.flansmod.common.FlansMod;
 import com.flansmod.common.driveables.DriveablePart;
-import com.flansmod.common.driveables.DriveablePosition;
 import com.flansmod.common.driveables.DriveableType;
 import com.flansmod.common.driveables.EntityDriveable;
 import com.flansmod.common.driveables.EntityVehicle;
@@ -27,6 +14,15 @@ import com.flansmod.common.driveables.ShootPoint;
 import com.flansmod.common.driveables.VehicleType;
 import com.flansmod.common.paintjob.Paintjob;
 import com.flansmod.common.vector.Vector3f;
+
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.entity.Render;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.item.EntityItem;
+import net.minecraft.item.ItemStack;
+import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.client.IItemRenderer;
 
 public class RenderVehicle extends Render implements IItemRenderer
 {
@@ -252,8 +248,8 @@ public class RenderVehicle extends Render implements IItemRenderer
 	protected ResourceLocation getEntityTexture(Entity entity) 
 	{
 		DriveableType type = ((EntityDriveable)entity).getDriveableType();
-		Paintjob paintjob = type.getPaintjob(((EntityDriveable)entity).getDriveableData().paintjobID);
-		return FlansModResourceHandler.getPaintjobTexture(paintjob);
+		Paintjob paintjob = type.paintjobs[((EntityDriveable)entity).getDriveableData().paintjobID];
+		return FlansModResourceHandler.getAuxiliaryTexture(paintjob.textureName);
 	}
 	
 	@Override

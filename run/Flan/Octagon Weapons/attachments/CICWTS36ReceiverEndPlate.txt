@@ -1,0 +1,11 @@
+// Naming
+Name CIC WTS-36 Receiver End Plate
+ShortName CICWTS36ReceiverEndPlate
+Category CICWTS36ReceiverEndPlate
+
+// Visual
+Icon HK416D10RS
+Model oc.ModelOCGun:CICWTS36ReceiverEndPlate skins/CICWTS36C.png 0.1
+
+// Attributes
+AttachableSlots -1 C[ CICWTS36StockButtPad ]

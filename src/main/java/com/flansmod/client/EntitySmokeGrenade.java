@@ -1,24 +1,13 @@
 package com.flansmod.client;
 
-import java.util.List;
-
 import org.lwjgl.opengl.GL11;
 
 import com.flansmod.common.FlansMod;
-import com.flansmod.common.teams.TeamsManager;
 
 import cpw.mods.fml.client.FMLClientHandler;
-import net.minecraft.block.Block;
 import net.minecraft.client.particle.EntityFX;
 import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityLiving;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.Blocks;
 import net.minecraft.util.AxisAlignedBB;
-import net.minecraft.util.DamageSource;
-import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.World;
 

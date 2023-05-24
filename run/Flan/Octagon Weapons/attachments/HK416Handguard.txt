@@ -1,0 +1,12 @@
+// Naming
+Name H&K416 Handguard
+ShortName HK416Handguard
+Category HK416Handguard
+
+// Visual
+Icon HK416D10RS
+Model oc.ModelOCGun:HK416Handguard skins/HK416D10RS.png 0.1
+
+// Attributes
+LeftHandPriority 0
+AttachableSlots 2 11 0 0 4 14 8 C[ PRA ] | 3 -9 0 180 4 14 8 C[ PRA ] | 4 0 -9 -90 4 14 8 C[ PRA ] | 4 0 9 90 4 14 8 C[ PRA ]

@@ -1,499 +1,215 @@
 package com.flansmod.client.model;
 
-import org.lwjgl.opengl.GL11;
-
-import net.minecraft.client.model.ModelBase;
-import net.minecraft.client.renderer.OpenGlHelper;
+import java.util.HashMap;
 
 import com.flansmod.client.tmt.ModelRendererTurbo;
+import com.flansmod.common.vector.TwoVector3f;
 import com.flansmod.common.vector.Vector3f;
 
-public class ModelGun extends ModelBase
+public abstract class ModelGun extends ModelFlan
 {
 	//Shapebox template. For quick copy pasting
 	//, 0F, /* 0 */ 0F, 0F, 0F, /* 1 */ 0F, 0F, 0F, /* 2 */ 0F, 0F, 0F, /* 3 */ 0F, 0F, 0F, /* 4 */ 0F, 0F, 0F, /* 5 */ 0F, 0F, 0F, /* 6 */ 0F, 0F, 0F, /* 7 */ 0F, 0F, 0F);
-
+	
 	//These first 7 models are static with no animation
 	public ModelRendererTurbo[] gunModel = new ModelRendererTurbo[0];
 	public ModelRendererTurbo[] backpackModel = new ModelRendererTurbo[0]; //For flamethrowers and such like. Rendered on the player's back
 	//These models appear when no attachment exists
-	public ModelRendererTurbo[] defaultBarrelModel = new ModelRendererTurbo[0];
-	public ModelRendererTurbo[] defaultScopeModel = new ModelRendererTurbo[0];
-	public ModelRendererTurbo[] defaultStockModel = new ModelRendererTurbo[0];
-	public ModelRendererTurbo[] defaultGripModel = new ModelRendererTurbo[0];
-	public ModelRendererTurbo[] defaultGadgetModel = new ModelRendererTurbo[0];
+	public ModelRendererTurbo[] defaultStockBaseModel = new ModelRendererTurbo[0];
+	public ModelRendererTurbo[] defaultStockModel2 = new ModelRendererTurbo[0];
+	public ModelRendererTurbo[] lightStuffModel = new ModelRendererTurbo[0];
+	public ModelRendererTurbo[] pumpModel2 = new ModelRendererTurbo[0];
+	public ModelRendererTurbo[] switchModel = new ModelRendererTurbo[0], boltCatchButtonModel = new ModelRendererTurbo[0];
+	public int numSwitchModel = 0;
+	//to separate if from the original codes
 
-	//Animated models follow.
-	public ModelRendererTurbo[] ammoModel = new ModelRendererTurbo[0];
-	public ModelRendererTurbo[] fullammoModel = new ModelRendererTurbo[0];
-	public ModelRendererTurbo[] revolverBarrelModel = new ModelRendererTurbo[0];
-	public ModelRendererTurbo[] revolver2BarrelModel = new ModelRendererTurbo[0];
-	public ModelRendererTurbo[] breakActionModel = new ModelRendererTurbo[0];
-	public ModelRendererTurbo[] altbreakActionModel = new ModelRendererTurbo[0];
+	//Animated models follow
     public ModelRendererTurbo[] slideModel = new ModelRendererTurbo[0];
     public ModelRendererTurbo[] altslideModel = new ModelRendererTurbo[0];
     public ModelRendererTurbo[] pumpModel = new ModelRendererTurbo[0];
     public ModelRendererTurbo[] chargeModel = new ModelRendererTurbo[0];
-    public ModelRendererTurbo[] altpumpModel = new ModelRendererTurbo[0];
-	public ModelRendererTurbo[] minigunBarrelModel = new ModelRendererTurbo[0];
-	public ModelRendererTurbo[] leverActionModel = new ModelRendererTurbo[0];
-	public ModelRendererTurbo[] hammerModel = new ModelRendererTurbo[0];
-	public ModelRendererTurbo[] althammerModel = new ModelRendererTurbo[0];
 	/** The point about which the minigun barrel rotates. Rotation is along the line of the gun through this point */
 	public Vector3f minigunBarrelOrigin = new Vector3f();
-
-	//These designate the locations of 3D attachment models on the gun
-	public Vector3f barrelAttachPoint = new Vector3f();
-	public Vector3f scopeAttachPoint = new Vector3f();
-	public Vector3f stockAttachPoint = new Vector3f();
-	public Vector3f gripAttachPoint = new Vector3f();
-	public Vector3f gadgetAttachPoint = new Vector3f();
-	public Vector3f slideAttachPoint = new Vector3f();
-	public Vector3f pumpAttachPoint = new Vector3f();
-	public Vector3f accessoryAttachPoint = new Vector3f();
+	
+	public float inertiaXConst = 0.1F, inertiaXMult = 0.8F, inertiaYConst = -0.1F, inertiaYMult = 0.8F, inertiaZConst = -0.1F, inertiaZMult = 0.8F, 
+				 aimGravityConst = 0.05F, aimGravityMult = 0.8F, gravityConst = 0.15F, gravityMult = 0.8F;
+	public float breathShakeAmplitudeY = 0.0012F, breathShakeCycleY = 0.07F, breathShakePhaseY = 0F, breathShakeAmplitudeZ = 0.0012F, breathShakeCycleZ = 0.035F, breathShakePhaseZ = 0F, 
+				 breathShakeRotMultY = 0.1F, breathShakeRotMultZ = -0.1F, cameraYawBreathShakeMult = -0.2F, cameraPitchBreathShakeMult = 0.2F, 
+				 walkShakeCycle = -(float)Math.PI, walkShakeAmplitudeY[] = new float[]{0.1F, 0.2F, -0.8F}, walkShakeAmplitudeZ[] = new float[]{0.1F, 0.2F, 0.8F}, 
+				 cameraWalkShakeMultPitch[] = new float[]{-7F, -7F, -5F}, cameraWalkShakeMultYaw[] = new float[]{7F, 7F, 5F}, 
+				 walkShakeRotMultY[] = new float[]{-5F, -10F, -40F}, walkShakeRotMultZ[] = new float[]{5F, 10F, -40F}, walkShakeRotMultX[] = new float[]{-5F, -10F, -40F};
+	
+	/** recoil shake */
+	public float recoilShakeRotX = 2F, recoilShakeRotY = 0.8F, recoilShakeRotZ = 0.8F, recoilShakeTransX = 0.04F, recoilShakeTransY = 0.01F, recoilShakeTransZ = 0.01F, 
+				 antiRecoilShakeConst = 0.36F;
+	/** when no sight installed, player will look through this point from x-axis */
+	public Vector3f barrelOrigin = new Vector3f(), chamberSmokeOri = new Vector3f();
+	/** where the mag will attach to this gun */
+	public Vector3f magAttachPoint = new Vector3f(), magAttachRotate = new Vector3f();
+	
+	/** gun extra translate and when entering the gun modify mode */
+	public Vector3f gunModifyTranslate = new Vector3f(1F, 0.1F, 0F);
+	
+	//Gun position states
+	/** The roate point that all those rotate states below follows */
+	public Vector3f holdingTranslate = new Vector3f(), holdingRotate = new Vector3f(), aimingTranslate = new Vector3f(), aimingRotate = new Vector3f();
+	public Vector3f sprintTranslate = new Vector3f(), sprintRotate = new Vector3f();
+	public Vector3f takeOutTranslate = new Vector3f(), takeOutRotate = new Vector3f(), restTranslate = new Vector3f(), restRotate = new Vector3f();
+	/** For reload animation that applied on gun */
+	public Vector3f reloadTranslate = new Vector3f(), reloadRotate = new Vector3f();
+	public Vector3f magTranslate = new Vector3f(), magRotate = new Vector3f(), magTranslate2 = new Vector3f(), magRotate2 = new Vector3f();
+	public float magTimeRatio = 1F;
+	/** for check ammo animation that applied on gun */
+	public Vector3f checkAmmoTranslate = new Vector3f(), checkAmmoRotate = new Vector3f(), checkAmmoMagTranslate = new Vector3f(), checkAmmoMagRotate = new Vector3f(), 
+					checkAmmoMagTranslate2 = new Vector3f(), checkAmmoMagRotate2 = new Vector3f();
+	public float checkAmmoTiltTimeRatio = 1F / 6F, checkAmmoMagTimeRatio = 1F / 3F, checkAmmoEndTime = 2F / 3F;
+	/** for check chamber animation that applied on gun */
+	public Vector3f checkChamberTranslate = new Vector3f(), checkChamberRotate = new Vector3f();
+	public float checkChamberTiltTimeRatio = 1F / 3F, checkChamberTiltBCTimeRatio = 0.5F, checkChamberChargeTimeRatio = 2F / 3F, checkChamberChargeRatio = 0.5F;
 
 	//Muzzle flash models
-	public Vector3f defaultBarrelFlashPoint = new Vector3f(0,0,0);
 	public Vector3f muzzleFlashPoint = new Vector3f(0,0,0);
-	public boolean hasFlash = false;
+	/** whether muzzle flash will free rotate when render it */
+	public boolean flashFreeRotate = true;
+	
+	//attach points for bullet model in mag
+	public Vector3f[] bulletAttachPoint1 = new Vector3f[0];
+	public Vector3f[] bulletAttachRotate1 = new Vector3f[0];
+	public Vector3f[] bulletAttachPoint2 = new Vector3f[0];
+	public Vector3f[] bulletAttachRotate2 = new Vector3f[0];
+	public Vector3f[] magFollowerAttachPos = new Vector3f[0];
+	public Vector3f[] magFollowerAttachRot = new Vector3f[0];
 
 	//Arms rendering
-	public boolean hasArms = false;
-	public Vector3f leftArmPos = new Vector3f(0,0,0);
-	public Vector3f leftArmRot = new Vector3f(0,0,0);
-	public Vector3f leftArmScale = new Vector3f(1,1,1);
-
-	public Vector3f rightArmPos = new Vector3f(0,0,0);
-	public Vector3f rightArmRot = new Vector3f(0,0,0);
-	public Vector3f rightArmScale = new Vector3f(1,1,1);
-
-	public Vector3f rightArmReloadPos = new Vector3f(0,0,0);
-	public Vector3f rightArmReloadRot = new Vector3f(0,0,0);
-	public Vector3f leftArmReloadPos = new Vector3f(0,0,0);
-	public Vector3f leftArmReloadRot = new Vector3f(0,0,0);
+	public boolean leftHandAmmo = false, rightHandAmmo = false, leftHandCharge = false, rightHandCharge = false, leftHandReloadingCharge = false, 
+				   rightHandReloadingCharge = false,  leftHandRelease = false, rightHandRelease = false, leftHandReloadingRelease = false, 
+				   rightHandReloadingRelease = false, leftHandCheckChamber = false, rightHandCheckChamber = false;
+	public Vector3f leftArmPos = new Vector3f(0,0,0), leftArmRot = new Vector3f(0,0,0), leftArmScale = new Vector3f(1F,1F,1F);
+	public Vector3f rightArmPos = new Vector3f(0,0,0), rightArmRot = new Vector3f(0,0,0), rightArmScale = new Vector3f(1F,1F,1F);
+	public HashMap<Integer, TwoVector3f> leftArmPose = new HashMap<Integer, TwoVector3f>(), rightArmPose = new HashMap<Integer, TwoVector3f>();
 	
-	public Vector3f rightArmChargePos = new Vector3f(0,0,0);
-	public Vector3f rightArmChargeRot = new Vector3f(0,0,0);
-	public Vector3f leftArmChargePos = new Vector3f(0,0,0);
-	public Vector3f leftArmChargeRot = new Vector3f(0,0,0);
+	public Vector3f leftArmAmmoPos = new Vector3f(0,0,0);
+	public Vector3f leftArmAmmoRot = new Vector3f(0,0,0);
+	public Vector3f rightArmAmmoPos = new Vector3f(0,0,0);
+	public Vector3f rightArmAmmoRot = new Vector3f(0,0,0);
 	
-	public Vector3f stagedrightArmReloadPos = new Vector3f(0,0,0);
-	public Vector3f stagedrightArmReloadRot = new Vector3f(0,0,0);
-	public Vector3f stagedleftArmReloadPos = new Vector3f(0,0,0);
-	public Vector3f stagedleftArmReloadRot = new Vector3f(0,0,0);
-
-	public boolean rightHandAmmo = false;
-	public boolean leftHandAmmo = false;
-
+	public Vector3f leftArmChargePos = new Vector3f(0,0,0), leftArmReloadingChargePos = new Vector3f(0,0,0);
+	public Vector3f leftArmChargeRot = new Vector3f(0,0,0), leftArmReloadingChargeRot = new Vector3f(0,0,0);
+	public Vector3f rightArmChargePos = new Vector3f(0,0,0), rightArmReloadingChargePos = new Vector3f(0,0,0);
+	public Vector3f rightArmChargeRot = new Vector3f(0,0,0), rightArmReloadingChargeRot = new Vector3f(0,0,0);
+	
+	public Vector3f leftArmReleasePos = new Vector3f(0,0,0), leftArmReloadingReleasePos = new Vector3f(0,0,0);
+	public Vector3f leftArmReleaseRot = new Vector3f(0,0,0), leftArmReloadingReleaseRot = new Vector3f(0,0,0);
+	public Vector3f rightArmReleasePos = new Vector3f(0,0,0), rightArmReloadingReleasePos = new Vector3f(0,0,0);
+	public Vector3f rightArmReleaseRot = new Vector3f(0,0,0), rightArmReloadingReleaseRot = new Vector3f(0,0,0);
+	public Vector3f leftHandCheckChamberPos = new Vector3f(0,0,0), leftHandCheckChamberRot = new Vector3f(0,0,0);
+	public Vector3f rightHandCheckChamberPos = new Vector3f(0,0,0), rightHandCheckChamberRot = new Vector3f(0,0,0);
+	
 	/** Recoil and slide based parameters */
-	public float gunSlideDistance = 1F / 4F;
-	public float altgunSlideDistance = 1F / 4F;
-	public float RecoilSlideDistance = 2F / 16F;
-	public float RotateSlideDistance = -3F;
-	public float ShakeDistance = 0F;
-	/** Select an amount of recoil per shot, between 0 and 1 */
-	public float recoilAmount = 0.33F;
-
+	public float gunSlideDistance = 0F, slideLockDistance = 0F, altgunSlideDistance = 0F;
 	/** Casing and muzzle flash parameters */
-    //  Total distance to translate
-    public Vector3f casingAnimDistance = new Vector3f(0, 0, 16);
-    //  Total range in variance for random motion
-    public Vector3f casingAnimSpread = new Vector3f(2, 4, 4);
-    //  Number of ticks (I guess?) to complete movement 
-    public int casingAnimTime = 20;
-    //  Rotation of the casing, 180 is the total rotation. If you do not understand rotation vectors, like me, just use the standard value here.
-    public Vector3f casingRotateVector = new Vector3f(0.1F, 1F, 0.1F);
-	public Vector3f casingAttachPoint = new Vector3f();
-	// Time before the casing is ejected from gun
-	public int casingDelay = 0;
-	// Scale the bullet casing separately from gun
-	public float caseScale = 1F;
-	public float flashScale = 1F;
+    public Vector3f caseOrigin = new Vector3f(0F), 
+    				caseEjectVelocity = new Vector3f(-4F / 160F, 4F / 160F, 40F / 160F), caseEjectRandV = new Vector3f(12F / 160F, 9F / 160F, 5F / 160F), 
+    				caseEjectAngularV = new Vector3f(-0.3F, -0.7F, -0.3F), caseEjectRandAV = new Vector3f(0.6F, -0.8F, 0.6F), 
+    				caseEjectVelocityWC = new Vector3f(-3F / 160F, 2F / 160F, 15F / 160F), caseEjectRandVWC = new Vector3f(6F / 160F, 4F / 160F, 4F / 160F), 
+    				caseEjectAngularVWC = new Vector3f(caseEjectAngularV), caseEjectRandAVWC = new Vector3f(caseEjectRandAV);
+    public float rotVelocity = 55F, rotVelocityWC = 30F, vFriction = 0.99F, rvFriction = 0.99F, gAcceleration = -1.96F / 160F;
+	// Exist time in ticks for each case
+	public int caseTime = 30;
 
     // Charge handle distance/delay/time
-    public float chargeHandleDistance = 0F;
-    public int chargeDelay = 0, chargeDelayAfterReload = 0, chargeTime = 1;
-
-	/**
-	 * Bullet Counter Models. Can be used to display bullet count in-game interface.
-	 * Each part is represented by number of rounds remaining per magazine.
-	 *
-	 * - Simple counter will loop through each part. Allows flexibility for bullet counter UI design.
-	 *
-	 * - Adv counter used for counting mags of more than 10, to reduce texture parts. Divides count into digits.
-	 *	 Less flexibility as it requires 10 textures parts at maximum (numbers 0-9).
-	 */
-	public ModelRendererTurbo[] bulletCounterModel = new ModelRendererTurbo[0];
-	public ModelRendererTurbo[][] advBulletCounterModel = new ModelRendererTurbo[0][0];
-	/** For Adv Bullet Counter. Reads in numbers from left hand side when false */
-	public boolean countOnRightHandSide = false;
-	/** Toggle the counters active. Saves render performance. */
-	public boolean isBulletCounterActive, isAdvBulletCounterActive = false;
-
-    
-	public EnumAnimationType animationType = EnumAnimationType.NONE;
+    public float chargeHandleDistance = 0F, prechargeDistance = 0F;
+	/** pre-charge is the action you need to do before real charging, like rotating the blot handle */
+	public Vector3f prechargeRotate = new Vector3f(0,0,0), prechargeRotatePoint = new Vector3f(0,0,0);
+	/** time to do pre-charge = chargeTime * prechargeTime, time left will be used to do real charge */
+	public float prechargeTime = 0F;
+	
 	public EnumMeleeAnimation meleeAnimation = EnumMeleeAnimation.DEFAULT;
 	public float tiltGunTime = 0.15F, unloadClipTime = 0.35F, loadClipTime = 0.35F, untiltGunTime = 0.15F;
-	/** If true, then the scope attachment will move with the top slide */
-	public boolean scopeIsOnSlide = false;
-	/** If true, then the scope attachment will move with the break action. Can be combined with the above */
-	public boolean scopeIsOnBreakAction = false;
-	/** For rifles and shotguns. Currently a generic reload animation regardless of how full the internal magazine already is */
-	public float numBulletsInReloadAnimation = 1;
-	/** For shotgun pump handles, rifle bolts and hammer pullbacks */
-	public int pumpDelay = 0, pumpDelayAfterReload = 0, pumpTime = 1, hammerDelay = 0;
-	/** For shotgun pump handle */
-	public float pumpHandleDistance = 4F / 16F;
-	/** For end loaded projectiles */
-	public float endLoadedAmmoDistance = 1F;
-	/** For break action projectiles */
-	public float breakActionAmmoDistance = 1F;
-	/** If true, then the grip attachment will move with the shotgun pump */
-	public boolean gripIsOnPump = false;
-	/** If true, then the gadget attachment will move with the shotgun pump */
-	public boolean gadgetIsOnPump = false;
-	/** The rotation point for the barrel break */
-	public Vector3f barrelBreakPoint = new Vector3f();
-	public Vector3f altbarrelBreakPoint = new Vector3f();
-	/** The amount the revolver barrel flips out by */
-	public float revolverFlipAngle = 15F;
-	/** The amount the revolver2 barrel flips out by */
-	public float revolver2FlipAngle = 15F;
-	/** The rotation point for the revolver flip */
-	public Vector3f revolverFlipPoint = new Vector3f();
-	/** The rotation point for the revolver2 flip */
-	public Vector3f revolver2FlipPoint = new Vector3f();
-	/** The angle the gun is broken by for break actions */
-	public float breakAngle = 45F;
-	public float altbreakAngle = 45F;
-	/** If true, then the gun will perform a spinning reload animation */
-	public boolean spinningCocking = false;
-	/** The point, in model co-ordinates, about which the gun is spun */
-	public Vector3f spinPoint = new Vector3f();
-	/** The point where the hammer will pivot and spin from */
-	public Vector3f hammerSpinPoint = new Vector3f();
-	public Vector3f althammerSpinPoint = new Vector3f();
-	public float hammerAngle = 75F;
-	public float althammerAngle = 75F;
-	/** Single action cocking check */
-	public boolean isSingleAction = false;
-	/** If true, lock the slide when the last bullet is fired */
-	public boolean slideLockOnEmpty = false;
-	/** If true, move the hands with the pump action */
-	public boolean lefthandPump = false;
-	public boolean righthandPump = false;
-	/** If true, move the hands with the charge action */
-	public boolean rightHandCharge = false;
-	public boolean leftHandCharge = false;
-	/** If true, move the hands with the bolt action */
-	public boolean rightHandBolt = false;
-	public boolean leftHandBolt = false;
-	public float pumpModifier = 4F;
-	public Vector3f chargeModifier = new Vector3f(8F, 4F, 4F);
-	/**If true, gun will translate when equipped with a sight attachment */
-	public float gunOffset = 0F;
-	public float crouchZoom = 0F;
-	public boolean fancyStance = false;
-	public Vector3f stanceTranslate = new Vector3f();
-	public Vector3f stanceRotate = new Vector3f();
 
+	public void renderGun(float f) { render(gunModel, f); }
 
-	/** Custom reload Parameters. If Enum.CUSTOM is set, these parameters can build an animation within the gun model classes */
-	public float rotateGunVertical = 0F;
-	public float rotateGunHorizontal = 0F;
-	public float tiltGun = 0F;
-	public Vector3f translateGun = new Vector3f(0F, 0F, 0F);
-	/* Ammo Model reload parameters */
-	public float rotateClipVertical = 0F;
-	public float stagedrotateClipVertical = 0F;
-	public float rotateClipHorizontal = 0F;
-	public float stagedrotateClipHorizontal = 0F;
-	public float tiltClip = 0F;
-	public float stagedtiltClip = 0F;
-	public Vector3f translateClip = new Vector3f(0F, 0F, 0F);
-	public Vector3f stagedtranslateClip = new Vector3f(0F, 0F, 0F);
-	public boolean stagedReload = false;
+	public void renderSlide(float f) { render(slideModel, f); }
 	
+	public void renderaltSlide(float f) { render(altslideModel, f); }
 
-	/** This offsets the render position for third person */
-	public Vector3f thirdPersonOffset = new Vector3f();
-
-	/** This offsets the render position for item frames */
-	public Vector3f itemFrameOffset = new Vector3f();
-
-	//lighting stuff
-	private static float lightmapLastX;
-    private static float lightmapLastY;
-	private static boolean optifineBreak = false;
-
-	public static void glowOn()
+	public void renderPump(float f) { render(pumpModel, f); }
+	
+	public void renderCharge(float f) { render(chargeModel, f); }
+	
+	public void renderDefaultStockBase(float f) { render(defaultStockBaseModel, f); }
+	
+	public void renderDefaultStock2(float f) { render(defaultStockModel2, f); }
+	
+	public void renderLightStuff(float f) { render(lightStuffModel, f); }
+	
+	public void renderPump2(float f) { render(pumpModel2, f); }
+	
+	public void renderSwitch(int numToRender, float f)
 	{
-		glowOn(15);
+		if(numSwitchModel != 0)
+			for(int head = numToRender * numSwitchModel, i = head + numSwitchModel; 
+					--i >= head; switchModel[i].render(f));
 	}
-
-    public static void glowOn(int glow)
-    {
-        GL11.glPushAttrib(GL11.GL_LIGHTING_BIT);
-
-        GL11.glEnable(GL11.GL_BLEND);
-		//GL11.glDisable(GL11.GL_ALPHA_TEST);
-        GL11.glBlendFunc(GL11.GL_ONE, GL11.GL_ONE);
-
-        try
+	
+	public void renderBoltCatchButton(boolean boltCatch, float f)
+	{
+		int head, i = boltCatchButtonModel.length;
+		if(boltCatch) head = i >>> 1;
+		else
 		{
-        	lightmapLastX = OpenGlHelper.lastBrightnessX;
-        	lightmapLastY = OpenGlHelper.lastBrightnessY;
-        }
-		catch(NoSuchFieldError e)
-		{
-        	optifineBreak = true;
-        }
-
-        float glowRatioX = Math.min((glow/15F)*240F + lightmapLastX, 240);
-        float glowRatioY = Math.min((glow/15F)*240F + lightmapLastY, 240);
-
-        if(!optifineBreak)
-        {
-            OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, glowRatioX, glowRatioY);
-        }
-    }
-
-    public static void glowOff()
-    {
-        GL11.glEnable(GL11.GL_LIGHTING);
-    	if(!optifineBreak)
-    	{
-    		OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, lightmapLastX, lightmapLastY);
-    	}
-
-        GL11.glPopAttrib();
-    }
-
-	public void renderGun(float f)
-	{
-		render(gunModel, f);
-	}
-
-	public void renderSlide(float f)
-	{
-		render(slideModel, f);
-	}
-	
-	public void renderaltSlide(float f)
-	{
-		render(altslideModel, f);
-	}
-
-	public void renderPump(float f)
-	{
-		render(pumpModel, f);
-	}
-	
-	public void renderaltPump(float f)
-	{
-		render(altpumpModel, f);
-	}
-	
-	public void renderCharge(float f)
-	{
-		render(chargeModel, f);
-	}
-
-	public void renderDefaultScope(float f)
-	{
-		render(defaultScopeModel, f);
-	}
-
-	public void renderDefaultBarrel(float f)
-	{
-		render(defaultBarrelModel, f);
-	}
-
-	public void renderDefaultStock(float f)
-	{
-		render(defaultStockModel, f);
-	}
-
-	public void renderDefaultGrip(float f)
-	{
-		render(defaultGripModel, f);
-	}
-
-	public void renderDefaultGadget(float f)
-	{
-		render(defaultGadgetModel, f);
-	}
-
-	public void renderAmmo(float f)
-	{
-		render(ammoModel, f);
-	}
-
-	public void renderfullAmmo(float f)
-	{
-		render(fullammoModel, f);
-	}
-	
-	public void renderMinigunBarrel(float f)
-	{
-		render(minigunBarrelModel, f);
-	}
-
-	public void renderRevolverBarrel(float f)
-	{
-		render(revolverBarrelModel, f);
-	}
-
-	public void renderRevolver2Barrel(float f)
-	{
-		render(revolver2BarrelModel, f);
-	}
-
-	public void renderBreakAction(float f)
-	{
-		render(breakActionModel, f);
-	}
-	
-	public void renderaltBreakAction(float f)
-	{
-		render(altbreakActionModel, f);
-	}
-
-	public void renderHammer(float f)
-	{
-		render(hammerModel, f);
-	}
-
-	public void renderaltHammer(float f)
-	{
-		render(althammerModel, f);
-	}
-
-	public void renderBulletCounter(float f, int k)
-	{
-		for(int i = 0; i < bulletCounterModel.length; i++)
-		{
-			if(i == k)
-			{
-				glowOn();
-				bulletCounterModel[i].render(f);
-				glowOff();
-			}
+			head = 0;
+			i >>>= 1;
 		}
+		for(; --i >= head; boltCatchButtonModel[i].render(f));
 	}
-
-	public void renderAdvBulletCounter(float f, int k, boolean rhs)
-	{
-		//Divide the ammo count into array of ints
-		char[] count = String.valueOf(k).toCharArray();
-		int[] digits = new int[count.length];
-
-		for(int i = 0; i < count.length ; i++)
-		{
-			if(!rhs)
-				digits[i] = count[i] - 48;						//read digits left hand side
-			else
-				digits[digits.length - 1 - i] = count[i] - 48;	//read digits right hand side
-		}
-
-		//Loop though the array, and manage ammo count render.
-		for(int i = 0; i < digits.length ; i++)
-		{
-			for(int j = 0; j < advBulletCounterModel[i].length; j++)
-			{
-				if (digits[i] == j)
-				{
-					glowOn();
-					advBulletCounterModel[i][j].render(f);
-					glowOff();
-				}
-			}
-		}
-	}
-
-
-	/** For renderering models simply */
-	protected void render(ModelRendererTurbo[] models, float f)
-	{
-		for(ModelRendererTurbo model : models)
-			if(model != null)
-				model.render(f);
-	}
-
+	
 	/** Flips the model. Generally only for backwards compatibility */
 	public void flipAll()
 	{
 		flip(gunModel);
-		flip(defaultBarrelModel);
-		flip(defaultScopeModel);
-		flip(defaultStockModel);
-		flip(defaultGripModel);
-		flip(defaultGadgetModel);
-		flip(ammoModel);
-		flip(fullammoModel);
+		flip(defaultStockBaseModel);
+		flip(defaultStockModel2);
+		flip(lightStuffModel);
+		flip(pumpModel2);
+		flip(switchModel);
+		flip(boltCatchButtonModel);
 		flip(slideModel);
 		flip(altslideModel);
 		flip(pumpModel);
-		flip(altpumpModel);
 		flip(chargeModel);
-		flip(minigunBarrelModel);
-		flip(revolverBarrelModel);
-		flip(revolver2BarrelModel);
-		flip(breakActionModel);
-		flip(altbreakActionModel);
-		flip(hammerModel);
-		flip(althammerModel);
-		flip(bulletCounterModel);
-		for(ModelRendererTurbo[] mod : advBulletCounterModel)
-			flip(mod);
 	}
-
-	protected void flip(ModelRendererTurbo[] model)
+	
+	public void flipAllBy(boolean x, boolean y, boolean z)
 	{
-		for(ModelRendererTurbo part : model)
-		{
-			part.doMirror(false, true, true);
-			part.setRotationPoint(part.rotationPointX, - part.rotationPointY, - part.rotationPointZ);
-		}
+		flipBy(gunModel, x, y, z);
+		flipBy(defaultStockBaseModel, x, y, z);
+		flipBy(defaultStockModel2, x, y, z);
+		flipBy(lightStuffModel, x, y, z);
+		flipBy(pumpModel2, x, y, z);
+		flipBy(switchModel, x, y, z);
+		flipBy(boltCatchButtonModel, x, y, z);
+		flipBy(slideModel, x, y, z);
+		flipBy(altslideModel, x, y, z);
+		flipBy(pumpModel, x, y, z);
+		flipBy(chargeModel, x, y, z);
 	}
 
 	/** Translates the model */
 	public void translateAll(float x, float y, float z)
 	{
-    	{
-    		translate(gunModel, x, y, z);
-    		translate(defaultBarrelModel, x, y, z);
-    		translate(defaultScopeModel, x, y, z);
-    		translate(defaultStockModel, x, y, z);
-    		translate(defaultGripModel, x, y, z);
-    		translate(defaultGadgetModel, x, y, z);
-    		translate(ammoModel, x, y, z);
-    		translate(fullammoModel, x, y, z);
-    		translate(slideModel, x, y, z);
-    		translate(altslideModel, x, y, z);
-    		translate(pumpModel, x, y, z);
-    		translate(altpumpModel, x, y, z);
-    		translate(chargeModel, x, y, z);
-    		translate(minigunBarrelModel, x, y, z);
-    		translate(revolverBarrelModel, x, y, z);
-    		translate(revolver2BarrelModel, x, y, z);
-    		translate(breakActionModel, x, y, z);
-    		translate(altbreakActionModel, x, y, z);
-    		translate(hammerModel, x, y, z);
-    		translate(althammerModel, x, y, z);
-			translate(bulletCounterModel, x, y, z);
-			for(ModelRendererTurbo[] mod : advBulletCounterModel)
-				translate(mod, x, y, z);
-    	}
+		translate(gunModel, x, y, z);
+		translate(defaultStockBaseModel, x, y, z);
+		translate(defaultStockModel2, x, y, z);
+		translate(lightStuffModel, x, y, z);
+		translate(pumpModel2, x, y, z);
+		translate(switchModel, x, y, z);
+		translate(boltCatchButtonModel, x, y, z);
+		translate(slideModel, x, y, z);
+		translate(altslideModel, x, y, z);
+		translate(pumpModel, x, y, z);
+		translate(chargeModel, x, y, z);
 	}
-
-	protected void translate(ModelRendererTurbo[] model, float x, float y, float z)
-	{
-		for(ModelRendererTurbo mod : model)
-		{
-			mod.rotationPointX += x;
-			mod.rotationPointY += y;
-			mod.rotationPointZ += z;
-		}
-	}
+	
+	protected static float getPartialTickTime() { return RenderGun.smoothing; }
 }

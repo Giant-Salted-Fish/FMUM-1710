@@ -52,16 +52,12 @@ public class Vector2f extends Vector implements Serializable, ReadableVector2f, 
 	/**
 	 * Constructor for Vector3f.
 	 */
-	public Vector2f() {
-		super();
-	}
+	public Vector2f() { super(); }
 
 	/**
 	 * Constructor
 	 */
-	public Vector2f(ReadableVector2f src) {
-		set(src);
-	}
+	public Vector2f(ReadableVector2f src) { set(src); }
 
 	/**
 	 * Constructor
@@ -74,7 +70,8 @@ public class Vector2f extends Vector implements Serializable, ReadableVector2f, 
 	 * @see org.lwjgl.util.vector.WritableVector2f#set(float, float)
 	 */
 	@Override
-	public void set(float x, float y) {
+	public void set(float x, float y)
+	{
 		this.x = x;
 		this.y = y;
 	}
@@ -84,9 +81,22 @@ public class Vector2f extends Vector implements Serializable, ReadableVector2f, 
 	 * @param src The source vector
 	 * @return this
 	 */
-	public Vector2f set(ReadableVector2f src) {
+	public Vector2f set(ReadableVector2f src)
+	{
 		x = src.getX();
 		y = src.getY();
+		return this;
+	}
+	
+	/**
+	 * Set this vec as same value of given vec
+	 * @param vec The vec to copy value
+	 * @return this
+	 */
+	public Vector2f set(Vector2f vec)
+	{
+		x = vec.x;
+		y = vec.y;
 		return this;
 	}
 
@@ -94,9 +104,7 @@ public class Vector2f extends Vector implements Serializable, ReadableVector2f, 
 	 * @return the length squared of the vector
 	 */
 	@Override
-	public float lengthSquared() {
-		return x * x + y * y;
-	}
+	public float lengthSquared() { return x * x + y * y; }
 
 	/**
 	 * Translate a vector
@@ -104,7 +112,8 @@ public class Vector2f extends Vector implements Serializable, ReadableVector2f, 
 	 * @param y the translation in y
 	 * @return this
 	 */
-	public Vector2f translate(float x, float y) {
+	public Vector2f translate(float x, float y)
+	{
 		this.x += x;
 		this.y += y;
 		return this;
@@ -115,7 +124,8 @@ public class Vector2f extends Vector implements Serializable, ReadableVector2f, 
 	 * @return this
 	 */
 	@Override
-	public Vector negate() {
+	public Vector negate()
+	{
 		x = -x;
 		y = -y;
 		return this;
@@ -126,9 +136,9 @@ public class Vector2f extends Vector implements Serializable, ReadableVector2f, 
 	 * @param dest The destination vector or null if a new vector is to be created
 	 * @return the negated vector
 	 */
-	public Vector2f negate(Vector2f dest) {
-		if (dest == null)
-			dest = new Vector2f();
+	public Vector2f negate(Vector2f dest)
+	{
+		if(dest == null) dest = new Vector2f();
 		dest.x = -x;
 		dest.y = -y;
 		return dest;
@@ -142,12 +152,8 @@ public class Vector2f extends Vector implements Serializable, ReadableVector2f, 
 	 */
 	public Vector2f normalise(Vector2f dest) {
 		float l = length();
-
-		if (dest == null)
-			dest = new Vector2f(x / l, y / l);
-		else
-			dest.set(x / l, y / l);
-
+		if(dest != null) dest.set(x / l, y / l);
+		else return new Vector2f(x / l, y / l);
 		return dest;
 	}
 
@@ -158,9 +164,7 @@ public class Vector2f extends Vector implements Serializable, ReadableVector2f, 
 	 * @param right The RHS vector
 	 * @return left dot right
 	 */
-	public static float dot(Vector2f left, Vector2f right) {
-		return left.x * right.x + left.y * right.y;
-	}
+	public static float dot(Vector2f left, Vector2f right) { return left.x * right.x + left.y * right.y; }
 
 
 
@@ -170,12 +174,11 @@ public class Vector2f extends Vector implements Serializable, ReadableVector2f, 
 	 * @param b The other vector
 	 * @return the angle between the two vectors, in radians
 	 */
-	public static float angle(Vector2f a, Vector2f b) {
+	public static float angle(Vector2f a, Vector2f b)
+	{
 		float dls = dot(a, b) / (a.length() * b.length());
-		if (dls < -1f)
-			dls = -1f;
-		else if (dls > 1.0f)
-			dls = 1.0f;
+		if(dls < -1F) dls = -1F;
+		else if (dls > 1F) dls = 1F;
 		return (float)Math.acos(dls);
 	}
 

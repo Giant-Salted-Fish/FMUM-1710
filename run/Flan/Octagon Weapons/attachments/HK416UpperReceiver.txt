@@ -1,0 +1,11 @@
+// Naming
+Name H&K416 Upper Receiver
+ShortName HK416UpperReceiver
+Category HK416UpperReceiver
+
+// Visual
+Icon HK416D10RS
+Model oc.ModelOCGun:HK416UpperReceiver skins/HK416D10RS.png 0.1
+
+// Attributes
+AttachableSlots 8 17.5 0 0 4 9 8 C[ PRA ] | 56 6.5 C[ HK416BarrelExtension ] | 50 6.5 C[ HK416BarrelNut ] | 50 12.5 C[ HK416PistonGuide ] | 47 6.5 C[ HK416Bolt ] | 0 12 C[ ARChargeHandle ] | 35 4 5 C[ ARDustCover ]

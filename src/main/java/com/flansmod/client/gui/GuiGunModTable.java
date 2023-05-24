@@ -1,20 +1,9 @@
 package com.flansmod.client.gui;
 
-import java.util.Collections;
 import java.util.Random;
 
-import net.minecraft.client.renderer.RenderHelper;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraftforge.client.IItemRenderer;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
-
-import net.minecraft.client.gui.inventory.GuiContainer;
-import net.minecraft.entity.player.InventoryPlayer;
-import net.minecraft.init.Items;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.world.World;
 
 import com.flansmod.client.ClientProxy;
 import com.flansmod.client.model.GunAnimations;
@@ -25,16 +14,26 @@ import com.flansmod.common.guns.ItemGun;
 import com.flansmod.common.network.PacketGunPaint;
 import com.flansmod.common.paintjob.Paintjob;
 
+import net.minecraft.client.gui.inventory.GuiContainer;
+import net.minecraft.client.renderer.RenderHelper;
+import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.entity.player.InventoryPlayer;
+import net.minecraft.init.Items;
+import net.minecraft.item.ItemStack;
+import net.minecraft.util.ResourceLocation;
+import net.minecraft.world.World;
+import net.minecraftforge.client.IItemRenderer;
+
 public class GuiGunModTable extends GuiContainer 
 {
 	private static final ResourceLocation texture = new ResourceLocation("flansmod", "gui/gunTableNew.png");
 	private static final Random rand = new Random();
 	private Paintjob hoveringOver = null;
-	private String hoveringOverModSlots = null;
+	//private String hoveringOverModSlots = null;
 	private int mouseX, mouseY;
 	private InventoryPlayer inventory;
 	private boolean flipGunModel = false;
-
+	
 	//Smoothing
 	private int[] lastStats = {0, 0, 0, 0};
 	
@@ -52,16 +51,15 @@ public class GuiGunModTable extends GuiContainer
 		//Draw titles
 		fontRendererObj.drawString("Gun Modification Table", 6, 6, 0x404040);
 		fontRendererObj.drawString("Inventory", 7, 142, 0x404040);
-		fontRendererObj.drawString("Gun Information", 179, 22, 0x404040);
+		fontRendererObj.drawString("Gun Attribute", 179, 22, 0x404040);
 		fontRendererObj.drawString("Paintjobs", 179, 128, 0x404040);
-
+		
 		//If a gun is in the table, display gun and its values.
 		ItemStack gunStack = inventorySlots.getSlot(0).getStack();
 		if(gunStack != null && gunStack.getItem() instanceof ItemGun)
 		{
 			GunType gunType = ((ItemGun)gunStack.getItem()).type;
-			int reloadt = Math.round(gunType.getReloadTime(gunStack));
-
+			
 			if(gunType.model != null)
 			{
 				GL11.glPushMatrix();
@@ -79,7 +77,7 @@ public class GuiGunModTable extends GuiContainer
 					}
 					RenderHelper.enableStandardItemLighting();
 					GL11.glScalef(-60F, 60F, 60F);
-					ClientProxy.gunRenderer.renderGun(gunStack, gunType, 1F / 16F, gunType.model, GunAnimations.defaults, 0F, IItemRenderer.ItemRenderType.ENTITY);
+					ClientProxy.gunRenderer.renderGun(gunStack, gunType, 1F / 16F, gunType.model, GunAnimations.defaults, IItemRenderer.ItemRenderType.ENTITY, false);
 				}
 				GL11.glPopMatrix();
 			}
@@ -95,14 +93,14 @@ public class GuiGunModTable extends GuiContainer
 			fontRendererObj.drawString("Reload", 181, 97, 0x404040);
 
 
-			fontRendererObj.drawString(String.valueOf(roundFloat(gunType.getDamage(gunStack), 2)), 241, 62, 0x404040);
-			fontRendererObj.drawString(String.valueOf(roundFloat(gunType.getSpread(gunStack), 2)), 241, 74, 0x404040);
-			fontRendererObj.drawString(String.valueOf(roundFloat(gunType.getRecoilDisplay(gunStack), 2)), 241, 86, 0x404040);
-			fontRendererObj.drawString(String.valueOf(roundFloat(reloadt / 20, 2)) + "s", 241, 98, 0x404040);
+			fontRendererObj.drawString(String.valueOf(roundFloat(0F/*damage*/, 2)), 241, 62, 0x404040);
+			fontRendererObj.drawString(String.valueOf(roundFloat(0F/*spread*/, 2)), 241, 74, 0x404040);
+			fontRendererObj.drawString(String.valueOf(roundFloat(0F/*recoil*/, 2)), 241, 86, 0x404040);
+			fontRendererObj.drawString(String.valueOf(roundFloat(gunType.getTotalReloadTime() / 20F, 2)) + "s", 241, 98, 0x404040);
 
 			//Draw attachment tooltips
-			if(hoveringOverModSlots != null)
-				drawHoveringText(Collections.singletonList(hoveringOverModSlots), mouseX - guiLeft, mouseY - guiTop, fontRendererObj);
+			//if(hoveringOverModSlots != null)
+				//drawHoveringText(Collections.singletonList(hoveringOverModSlots), mouseX - guiLeft, mouseY - guiTop, fontRendererObj);
 		}
     }
 	
@@ -117,8 +115,8 @@ public class GuiGunModTable extends GuiContainer
 		mc.renderEngine.bindTexture(texture);
 		drawTexturedModalRect(xOrigin, yOrigin, 0, 0, xSize, ySize);
 
-		for(int z = 1; z < 17; z++)
-			inventorySlots.getSlot(z).yDisplayPosition = -1000;
+		//for(int z = 1; z < 17; z++)
+			//inventorySlots.getSlot(z).yDisplayPosition = -1000;
 
 		ItemStack gunStack = inventorySlots.getSlot(0).getStack();
 		if(gunStack == null)
@@ -127,39 +125,38 @@ public class GuiGunModTable extends GuiContainer
 		if(gunStack != null && gunStack.getItem() instanceof ItemGun)
 		{
 			GunType gunType = ((ItemGun)gunStack.getItem()).type;
-			boolean[] allowBools = {gunType.allowBarrelAttachments, gunType.allowScopeAttachments, gunType.allowStockAttachments,
+			/*boolean[] allowBools = {gunType.allowBarrelAttachments, gunType.allowSightAttachments, gunType.allowStockAttachments,
 					gunType.allowGripAttachments, gunType.allowGadgetAttachments, gunType.allowSlideAttachments,
-					gunType.allowPumpAttachments, gunType.allowAccessoryAttachments};
-			int reloadt = Math.round(gunType.getReloadTime(gunStack));
+					gunType.allowPumpAttachments, gunType.allowAccessoryAttachments};*/
 
 			//draw flip display button
 			drawTexturedModalRect(xOrigin + 146, yOrigin + 63, 340, 166, 20, 10);
 
 			//Cycle through the booleans and generics, and draw to table.
-			for(int m = 0; m < allowBools.length; m++)
+			/*for(int m = 0; m < allowBools.length; m++)
 			{
 				if(allowBools[m])
 				{
 					drawTexturedModalRect(xOrigin + 16 + (m * 18), yOrigin + 88, 340 + (m * 18), 136, 18, 18);
 					inventorySlots.getSlot(m + 1).yDisplayPosition = 89;
 				}
-			}
+			}*/
 
-			for(int x = 0; x < 8; x++)
+			/*for(int x = 0; x < 8; x++)
 			{
 				if(x < gunType.numGenericAttachmentSlots)
 				{
 					drawTexturedModalRect(xOrigin + 16 + (18 * x), yOrigin + 114, 340, 100, 18, 18);
 					inventorySlots.getSlot(allowBools.length + 1 + x).yDisplayPosition = 115;
 				}
-			}
+			}*/
 			//Calculates yellow stat bar
-			int[] stats = { Math.round(gunType.getDamage(gunStack)) * 4, Math.round(gunType.getSpread(gunStack)) * 4,
-					Math.round(gunType.getRecoilPitch(gunStack)) * 4, (reloadt / 20) * 8};
+			int[] stats = { Math.round(0F/*damage*/) * 4, Math.round(0F/*spread*/) * 4,
+					Math.round(0F/*recoil*/) * 8, (Math.round(gunType.getTotalReloadTime()) / 20) * 8};
 			displayGunValues(stats);
-
+			
 			//For Paintjobs
-			int numPaintjobs = gunType.paintjobs.size();
+			int numPaintjobs = gunType.paintjobs.length;
 			int numRows = numPaintjobs / 2 + 1;
 
 			for(int y = 0; y < numRows; y++)
@@ -167,8 +164,7 @@ public class GuiGunModTable extends GuiContainer
 				for(int x = 0; x < 2; x++)
 				{
 					//If this row has only one paintjob, don't try and render the second one
-					if(2 * y + x >= numPaintjobs)
-						continue;
+					if(2 * y + x >= numPaintjobs) continue;
 
 					drawTexturedModalRect(xOrigin + 181 + 18 * x, yOrigin + 150 + (18 * y), 340, 100, 18, 18);
 				}
@@ -183,7 +179,7 @@ public class GuiGunModTable extends GuiContainer
 					if(2 * y + x >= numPaintjobs)
 						continue;
 
-					Paintjob paintjob = gunType.paintjobs.get(2 * y + x);
+					Paintjob paintjob = gunType.paintjobs[2 * y + x];
 					ItemStack stack = gunStack.copy();
 					stack.setItemDamage(paintjob.ID);
 					itemRender.renderItemIntoGUI(mc.fontRenderer, mc.getTextureManager(), stack, xOrigin + 182 + (x * 18), yOrigin + 151 + (y * 18));
@@ -212,10 +208,13 @@ public class GuiGunModTable extends GuiContainer
 						if(stack != null && stack.getItem() == Items.dye && stack.getItemDamage() == hoveringOver.dyesNeeded[n].getItemDamage())
 						{
 							amountNeeded -= stack.stackSize;
+							if(amountNeeded <= 0)
+							{
+								haveDyes[n] = true;
+								break;
+							}
 						}
 					}
-					if(amountNeeded <= 0)
-						haveDyes[n] = true;
 				}
 
 				GL11.glColor4f(1F, 1F, 1F, 1F);
@@ -257,9 +256,9 @@ public class GuiGunModTable extends GuiContainer
 			{
 				if(stats[k] < 80 && difference != 0 && difference > 0)  //increment if positive
 					finalWidth = lastStats[k] += 2;
-				else if (difference != 0 && difference < 0)             //decrement if negative
+				else if(difference != 0 && difference < 0)             //decrement if negative
 					finalWidth = lastStats[k] -= 2;
-				else if (stats[k] < 80)
+				else if(stats[k] < 80)
 					finalWidth = stats[k];
 				else
 					finalWidth = 80;
@@ -313,9 +312,9 @@ public class GuiGunModTable extends GuiContainer
 		if(gunStack != null && gunStack.getItem() instanceof ItemGun)
 		{
 			GunType gunType = ((ItemGun)gunStack.getItem()).type;
-			int numPaintjobs = gunType.paintjobs.size();
+			int numPaintjobs = gunType.paintjobs.length;
 			int numRows = numPaintjobs / 2 + 1;
-
+			
 			for(int j = 0; j < numRows; j++)
 			{
 				for(int i = 0; i < 2; i++)
@@ -323,7 +322,7 @@ public class GuiGunModTable extends GuiContainer
 					if(2 * j + i >= numPaintjobs)
 						continue;
 
-					Paintjob paintjob = gunType.paintjobs.get(2 * j + i);
+					Paintjob paintjob = gunType.paintjobs[2 * j + i];
 					ItemStack stack = gunStack.copy();
 					stack.stackTagCompound.setString("Paint", paintjob.iconName);
 					int slotX = 181 + i * 18;
@@ -334,20 +333,19 @@ public class GuiGunModTable extends GuiContainer
 			}
 
 			//Show attachment tooltips
-			hoveringOverModSlots = null;
+			/*hoveringOverModSlots = null;
 			String[] text = {"Barrel", "Scope", "Stock", "Grip", "Gadget", "Slide", "Pump", "Accessory"};
-			boolean[] allowBools = {gunType.allowBarrelAttachments, gunType.allowScopeAttachments, gunType.allowStockAttachments,
+			boolean[] allowBools = {gunType.allowBarrelAttachments, gunType.allowSightAttachments, gunType.allowStockAttachments,
 					gunType.allowGripAttachments, gunType.allowGadgetAttachments, gunType.allowSlideAttachments,
-					gunType.allowPumpAttachments, gunType.allowAccessoryAttachments};
+					gunType.allowPumpAttachments, gunType.allowAccessoryAttachments};*/
 
-			for(int a = 0; a < allowBools.length; a++)
+			/*for(int a = 0; a < allowBools.length; a++)
 			{
 				int slotX = 16 + a * 18;
 				int slotY = 88;
-				if(mouseXInGUI >= slotX && mouseXInGUI < slotX + 18 && mouseYInGUI >= slotY && mouseYInGUI < slotY + 18
-						&& !inventorySlots.getSlot(a + 1).getHasStack() && allowBools[a])
+				if(mouseXInGUI >= slotX && mouseXInGUI < slotX + 18 && mouseYInGUI >= slotY && mouseYInGUI < slotY + 18 && !inventorySlots.getSlot(a + 1).getHasStack() && allowBools[a])
 					hoveringOverModSlots = text[a];
-			}
+			}*/
 		}
 	}
 	
@@ -360,7 +358,7 @@ public class GuiGunModTable extends GuiContainer
 		super.mouseClicked(x, y, button);
 		int m = x - xOrigin;
 		int n = y - yOrigin;
-		if (button == 0 || button == 1)
+		if(button == 0 || button == 1)
 		{
 			if(m >= 146 && m <= 165 && n >= 63 && n <= 72)
 			{
@@ -377,7 +375,7 @@ public class GuiGunModTable extends GuiContainer
 			return;
 		
 		FlansMod.getPacketHandler().sendToServer(new PacketGunPaint(hoveringOver.ID));
-		((ContainerGunModTable)inventorySlots).clickPaintjob(hoveringOver);
+		//((ContainerGunModTable)inventorySlots).clickPaintjob(hoveringOver);
     }
 
 	//Round values to n number of decimal points

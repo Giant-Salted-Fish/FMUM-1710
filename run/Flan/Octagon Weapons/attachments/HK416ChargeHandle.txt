@@ -1,0 +1,10 @@
+// Naming
+Name H&K416 Charge Handle
+ShortName HK416ChargeHandle
+Category ARChargeHandle
+
+// Visual
+Icon HK416D10RS
+Model oc.ModelOCGun:HK416ChargeHandle skins/HK416D10RS.png 0.1
+
+// Attributes

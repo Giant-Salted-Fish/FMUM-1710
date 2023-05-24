@@ -2,15 +2,11 @@ package com.flansmod.client;
 
 import org.lwjgl.opengl.GL11;
 
-import com.flansmod.common.FlansMod;
-
 import cpw.mods.fml.client.FMLClientHandler;
-import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import net.minecraft.client.particle.EntityFX;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.World;
-import net.minecraftforge.client.event.TextureStitchEvent;
 
 public class EntityAfterburn extends EntityFX
 {

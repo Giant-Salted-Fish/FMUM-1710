@@ -6,6 +6,15 @@ import java.util.List;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 
+import com.flansmod.common.FlansMod;
+import com.flansmod.common.driveables.ContainerDriveableInventory;
+import com.flansmod.common.driveables.EntityDriveable;
+import com.flansmod.common.driveables.Seat;
+import com.flansmod.common.driveables.mechas.EntityMecha;
+import com.flansmod.common.guns.BulletType;
+import com.flansmod.common.guns.GunType;
+import com.flansmod.common.network.PacketDriveableGUI;
+
 import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.entity.player.InventoryPlayer;
@@ -13,17 +22,6 @@ import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.World;
-
-import com.flansmod.common.FlansMod;
-import com.flansmod.common.driveables.ContainerDriveableInventory;
-import com.flansmod.common.driveables.DriveableType;
-import com.flansmod.common.driveables.EntityDriveable;
-import com.flansmod.common.driveables.Seat;
-import com.flansmod.common.driveables.mechas.EntityMecha;
-import com.flansmod.common.guns.BulletType;
-import com.flansmod.common.guns.GunType;
-import com.flansmod.common.guns.ShootableType;
-import com.flansmod.common.network.PacketDriveableGUI;
 
 public class GuiDriveableInventory extends GuiContainer
 {
@@ -83,25 +81,23 @@ public class GuiDriveableInventory extends GuiContainer
 						if(y >= this.guiTop +itemY && y <= this.guiTop +itemY+16)
 						{
 							if(x >= this.guiLeft+10 && x <= this.guiLeft+10 +17)
-							{
 								listHoveringText.add(seat.gunType.name);
-							}
 							else if(x >= this.guiLeft+28 && x <= this.guiLeft+28 +17)
 							{
-								if(seat.gunType.ammo.size() > 0) listHoveringText.add("[Ammo]");
-								for(ShootableType ammo : seat.gunType.ammo)
-								{
-									listHoveringText.add("> " + ammo.name);
-								}
+								if(seat.gunType.ammo.length > 0) listHoveringText.add("[Ammo]");
+								for(Integer ammo : seat.gunType.ammo)
+									listHoveringText.add("> " + ammo);//.name);
 							}
 
 						}
-
-						for(int ai = 0; ai < seat.gunType.ammo.size(); ai++)
+						
+						/*for(int j = 0, num = 0, size = seat.gunType.ammo.length; j < size; ++j)
 						{
-							drawStack(new ItemStack(seat.gunType.ammo.get(ai).getItem()), 110+ai*16, itemY);
-						}
-
+							ShootableType shootableType = null;//ShootableType.getTypeByName(seat.gunType.ammo[j]);
+							if(shootableType == null) continue;
+							drawStack(new ItemStack(shootableType.getItem()), 110 + num++ * 16, itemY);
+						}*/
+						
 						drawStack(new ItemStack(seat.gunType.getItem()), 10, 25 + 19 * (slotsDone - scroll));
 					}
 					slotsDone++;
@@ -120,24 +116,21 @@ public class GuiDriveableInventory extends GuiContainer
 						GunType gunType = driveable.getDriveableType().pilotGuns.get(i).type;
 						if(y >= this.guiTop +itemY && y <= this.guiTop +itemY+16)
 						{
-							if(x >= this.guiLeft+10 && x <= this.guiLeft+10 +17)
-							{
+							if(x >= this.guiLeft + 10 && x <= this.guiLeft + 10 + 17)
 								listHoveringText.add(gunType.name);
-							}
-							else if(x >= this.guiLeft+28 && x <= this.guiLeft+28 +17)
+							else if(x >= this.guiLeft + 28 && x <= this.guiLeft + 28 + 17)
 							{
-								if(gunType.ammo.size() > 0) listHoveringText.add("[Ammo]");
-								for(ShootableType ammo : gunType.ammo)
-								{
-									listHoveringText.add("> " + ammo.name);
-								}
+								if(gunType.ammo.length > 0) listHoveringText.add("[Ammo]");
+								for(Integer ammo : gunType.ammo) listHoveringText.add("> " + ammo);
 							}
 						}
 
-						for(int ai = 0; ai < gunType.ammo.size(); ai++)
+						/*for(int j = 0, num = 0, size = gunType.ammo.length; j < size; ++j)
 						{
-							drawStack(new ItemStack(gunType.ammo.get(ai).getItem()), 110+ai*16, itemY);
-						}
+							ShootableType shootableType = null;//ShootableType.getTypeByName(gunType.ammo[j]);
+							if(shootableType == null) continue;
+							drawStack(new ItemStack(shootableType.getItem()), 110 + num++ * 16, itemY);
+						}*/
 
 						drawStack(new ItemStack(driveable.getDriveableType().pilotGuns.get(i).type.getItem()), 10, 25 + 19 * (slotsDone - scroll));
 					}

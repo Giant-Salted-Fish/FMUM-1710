@@ -3,8 +3,6 @@ package com.flansmod.common.guns.raytracing;
 import java.util.ArrayList;
 
 import com.flansmod.common.FlansMod;
-import com.flansmod.common.PlayerData;
-import com.flansmod.common.PlayerHandler;
 import com.flansmod.common.RotatedAxes;
 import com.flansmod.common.guns.GunType;
 import com.flansmod.common.guns.ItemGun;
@@ -48,8 +46,8 @@ public class PlayerSnapshot
 		float yHead = (p.rotationYawHead - p.renderYawOffset) / (180F / (float)Math.PI);
         float xHead = p.rotationPitch / (180F / (float)Math.PI);
 		
-        float zRight = 0.0F;
-        float zLeft = 0.0F;
+        float zRight = 0F;
+        float zLeft = 0F;
         float yRight = -0.1F + yHead - ((float)Math.PI / 2F);
         float yLeft = 0.1F + yHead + 0.4F - ((float)Math.PI / 2F);
         float xRight = -((float)Math.PI / 2F) + xHead;
@@ -63,44 +61,24 @@ public class PlayerSnapshot
 		RotatedAxes leftArmAxes = (new RotatedAxes()).rotateGlobalPitchInRads(xLeft).rotateGlobalYawInRads((float)Math.PI + yLeft).rotateGlobalRollInRads(-zLeft);
 		RotatedAxes rightArmAxes = (new RotatedAxes()).rotateGlobalPitchInRads(xRight).rotateGlobalYawInRads((float)Math.PI + yRight).rotateGlobalRollInRads(-zRight);
 		
-		float originZRight = MathHelper.sin(-p.renderYawOffset * 3.14159265F / 180F) * 5.0F / 16F;
-		float originXRight = -MathHelper.cos(-p.renderYawOffset * 3.14159265F / 180F) * 5.0F / 16F;
+		float originZRight = MathHelper.sin(-p.renderYawOffset * 3.14159265F / 180F) * 5.0F;
+		float originXRight = -MathHelper.cos(-p.renderYawOffset * 3.14159265F / 180F) * 5.0F;
 
-		float originZLeft = -MathHelper.sin(-p.renderYawOffset * 3.14159265F / 180F) * 5.0F / 16F;
-		float originXLeft  = MathHelper.cos(-p.renderYawOffset * 3.14159265F / 180F) * 5.0F / 16F;
+		float originZLeft = -MathHelper.sin(-p.renderYawOffset * 3.14159265F / 180F) * 5.0F;
+		float originXLeft  = MathHelper.cos(-p.renderYawOffset * 3.14159265F / 180F) * 5.0F;
 		
-		hitboxes.add(new PlayerHitbox(player, bodyAxes.findLocalAxesGlobally(leftArmAxes), new Vector3f(originXLeft, 1.3F, originZLeft), new Vector3f(-2F / 16F, -0.6F, -2F / 16F), new Vector3f(0.25F, 0.7F, 0.25F), EnumHitboxType.LEFTARM));	
-		hitboxes.add(new PlayerHitbox(player, bodyAxes.findLocalAxesGlobally(rightArmAxes), new Vector3f(originXRight, 1.3F, originZRight), new Vector3f(-2F / 16F, -0.6F, -2F / 16F), new Vector3f(0.25F, 0.7F, 0.25F), EnumHitboxType.RIGHTARM));	
+		hitboxes.add(new PlayerHitbox(player, bodyAxes.findLocalAxesGlobally(leftArmAxes), new Vector3f(originXLeft, 1.3F, originZLeft), new Vector3f(-2F / 16F, -0.6F, -2F / 16F), new Vector3f(0.25F, 0.7F, 0.25F), EnumHitboxType.LEFT_ARM));	
+		hitboxes.add(new PlayerHitbox(player, bodyAxes.findLocalAxesGlobally(rightArmAxes), new Vector3f(originXRight, 1.3F, originZRight), new Vector3f(-2F / 16F, -0.6F, -2F / 16F), new Vector3f(0.25F, 0.7F, 0.25F), EnumHitboxType.RIGHT_ARM));	
 		
 		//Add box for right hand shield
 		ItemStack playerRightHandStack = player.getCurrentEquippedItem();
 		if(playerRightHandStack != null && playerRightHandStack.getItem() instanceof ItemGun)
 		{
 			GunType gunType = ((ItemGun)playerRightHandStack.getItem()).type;
-			if(gunType.shield)
-			{
-				hitboxes.add(new PlayerHitbox(player, bodyAxes.findLocalAxesGlobally(rightArmAxes), new Vector3f(originXRight, 1.3F, originZRight), new Vector3f(gunType.shieldOrigin.y, -1.05F + gunType.shieldOrigin.x, -1F / 16F + gunType.shieldOrigin.z), new Vector3f(gunType.shieldDimensions.y, gunType.shieldDimensions.x, gunType.shieldDimensions.z), EnumHitboxType.RIGHTITEM));	
-			}
-			
-			//Add left hand shield box
-			PlayerData data = PlayerHandler.getPlayerData(player);
-			if(gunType.oneHanded && data.offHandGunSlot != 0)
-			{
-				ItemStack leftHandStack = null;
-				//Client side other players
-				if(player.worldObj.isRemote && !FlansMod.proxy.isThePlayer(player))
-					leftHandStack = data.offHandGunStack;
-				else leftHandStack = player.inventory.getStackInSlot(data.offHandGunSlot - 1);
-				
-				if(leftHandStack != null && leftHandStack.getItem() instanceof ItemGun)
-				{
-					GunType leftGunType = ((ItemGun)leftHandStack.getItem()).type;
-					if(leftGunType.shield)
-					{
-						hitboxes.add(new PlayerHitbox(player, bodyAxes.findLocalAxesGlobally(leftArmAxes), new Vector3f(originXLeft, 1.3F, originZLeft), new Vector3f(leftGunType.shieldOrigin.y, -1.05F + leftGunType.shieldOrigin.x, -1F / 16F + leftGunType.shieldOrigin.z), new Vector3f(leftGunType.shieldDimensions.y, leftGunType.shieldDimensions.x, leftGunType.shieldDimensions.z), EnumHitboxType.LEFTITEM));	
-					}
-				}
-			}
+			if(gunType.shield) hitboxes.add(new PlayerHitbox(player, bodyAxes.findLocalAxesGlobally(rightArmAxes), 
+					new Vector3f(originXRight, 1.3F, originZRight), 
+					new Vector3f(gunType.shieldOrigin.y, -1.05F + gunType.shieldOrigin.x, -1F / 16F + gunType.shieldOrigin.z), 
+					new Vector3f(gunType.shieldDimensions.y, gunType.shieldDimensions.x, gunType.shieldDimensions.z), EnumHitboxType.RIGHT_ITEM));	
 		}
 	}
 	
@@ -115,21 +93,11 @@ public class PlayerSnapshot
 		for(PlayerHitbox hitbox : hitboxes)
 		{
 			PlayerBulletHit hit = hitbox.raytrace(localOrigin, motion);
-			if(hit != null && hit.intersectTime >= 0F && hit.intersectTime <= 1F)
-			{
-				hits.add(hit);
-			}
+			if(hit != null && hit.intersectTime >= 0F && hit.intersectTime <= 1F) hits.add(hit);
 		}
-		
 		return hits;
 	}
 	
 	@SideOnly(Side.CLIENT)
-	public void renderSnapshot()
-	{
-		for(PlayerHitbox hitbox : hitboxes)
-		{
-			hitbox.renderHitbox(player.worldObj, pos);
-		}
-	}
+	public void renderSnapshot() { for(PlayerHitbox hitbox : hitboxes) hitbox.renderHitbox(player.worldObj, pos); }
 }

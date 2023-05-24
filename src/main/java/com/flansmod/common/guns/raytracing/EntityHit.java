@@ -11,5 +11,4 @@ public class EntityHit extends BulletHit
 		super(f);
 		entity = e;
 	}
-
 }

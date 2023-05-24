@@ -9,6 +9,75 @@ import net.minecraft.world.World;
 /** Adds access to the InventoryPlayer stack combination methods for arbitrary inventories */
 public class InventoryHelper 
 {
+	/** new method to add something to player's inventory, prevent adding stack to clothes slot, this method don't care if player is creative */
+	public static boolean addItemStackToPlayerInventory(IInventory inventory, ItemStack stackToAdd)
+	{
+		if(stackToAdd == null || stackToAdd.stackSize == 0)
+			return false;
+		else //is a valid stack to add
+		{
+			//if stack is damaged or max stack size is 0, just find a null slot to add it
+			if(stackToAdd.isItemDamaged() || stackToAdd.getMaxStackSize() == 1)
+			{
+				for(int i = 0; i < 36; i++)
+				{
+					//find an null slot, set it
+					if(inventory.getStackInSlot(i) == null)
+					{
+						stackToAdd.animationsToGo = 5;
+						inventory.setInventorySlotContents(i, stackToAdd);
+						return true;
+					}
+				}
+				//check through inventory but not finding a valid slot to add, return false
+				return false;
+			}
+			else //stack not damaged and is stackable, we need to consider stacking it with an existed itemstack in inventory
+			{
+				ItemStack stackInSlot;
+				//check through inventory for two times, first time to see if we can stack it, second time to see if has null slot to set it
+				for(int i = 0; i < 36; i++)
+				{
+					stackInSlot = inventory.getStackInSlot(i);
+					if(stackInSlot != null && stackInSlot.getItem() == stackToAdd.getItem() && stackInSlot.isStackable() && 
+					   /*stackInSlot.stackSize < stackInSlot.getMaxStackSize() && stackInSlot.stackSize < inventory.getInventoryStackLimit() && */
+					   (!stackInSlot.getHasSubtypes() || stackInSlot.getItemDamage() == stackToAdd.getItemDamage()) && ItemStack.areItemStackTagsEqual(stackInSlot, stackToAdd))
+					{
+						int canAddSize = Math.min(stackInSlot.getMaxStackSize() - stackInSlot.stackSize, inventory.getInventoryStackLimit() - stackInSlot.stackSize);
+						//size in this slot is max, can add more, continue
+						if(canAddSize != 0)
+						{
+							if(stackToAdd.stackSize > canAddSize)
+							{
+								stackInSlot.stackSize += canAddSize;
+								stackInSlot.animationsToGo = 5;
+								stackToAdd.stackSize -= canAddSize;
+							}
+							else //can add size is bigger than to add size, add them all
+							{
+								stackInSlot.stackSize += stackToAdd.stackSize;
+								stackInSlot.animationsToGo = 5;
+								return true;
+							}
+						}
+					}
+				}
+				//after first round there is still some left to add, find null slot to place them
+				for(int i = 0; i < 36; i++)
+				{
+					if(inventory.getStackInSlot(i) == null)
+					{
+						stackToAdd.animationsToGo = 5;
+						inventory.setInventorySlotContents(i, stackToAdd);
+						return true;
+					}
+				}
+				return false;
+			}
+		}
+	}
+	
+	/** original method to add itemstack to inventory */
 	public static boolean addItemStackToInventory(IInventory inventory, ItemStack stack, boolean creative)
 	{
 		if(stack == null)
@@ -20,12 +89,12 @@ public class InventoryHelper
             try
             {
                 int i;
-
-                if (stack.isItemDamaged())
+				
+                if(stack.isItemDamaged())
                 {
                     i = getFirstEmptyStack(inventory);
 
-                    if (i >= 0)
+                    if(i >= 0)
                     {
                     	ItemStack stackToAdd = ItemStack.copyItemStack(stack);
                     	stackToAdd.animationsToGo = 5;
@@ -47,9 +116,9 @@ public class InventoryHelper
                         i = stack.stackSize;
                         stack.stackSize = storePartialItemStack(inventory, stack);
                     }
-                    while (stack.stackSize > 0 && stack.stackSize < i);
-
-                    if (stack.stackSize == i && creative)
+                    while(stack.stackSize > 0 && stack.stackSize < i);
+					
+                    if(stack.stackSize == i && creative)
                     {
                     	stack.stackSize = 0;
                         return true;
@@ -60,7 +129,7 @@ public class InventoryHelper
                     }
                 }
             }
-            catch (Throwable throwable)
+            catch(Throwable throwable)
             {
                 throwable.printStackTrace();
                 return false;
@@ -73,7 +142,7 @@ public class InventoryHelper
         for (int i = 0; i < inventory.getSizeInventory(); ++i)
         {
         	ItemStack oldStack = inventory.getStackInSlot(i);
-            if (oldStack != null && oldStack.getItem() == stack.getItem() && oldStack.isStackable() && oldStack.stackSize < oldStack.getMaxStackSize() && oldStack.stackSize < inventory.getInventoryStackLimit() && (!oldStack.getHasSubtypes() || oldStack.getItemDamage() == stack.getItemDamage()) && ItemStack.areItemStackTagsEqual(oldStack, stack))
+            if(oldStack != null && oldStack.getItem() == stack.getItem() && oldStack.isStackable() && oldStack.stackSize < oldStack.getMaxStackSize() && oldStack.stackSize < inventory.getInventoryStackLimit() && (!oldStack.getHasSubtypes() || oldStack.getItemDamage() == stack.getItemDamage()) && ItemStack.areItemStackTagsEqual(oldStack, stack))
             {
                 return i;
             }
@@ -93,7 +162,7 @@ public class InventoryHelper
         {
             k = getFirstEmptyStack(inventory);
             //If it is impossible, return
-            if (k < 0)
+            if(k < 0)
             {
                 return j;
             }
@@ -109,12 +178,12 @@ public class InventoryHelper
         else
         {
             k = storeItemStack(inventory, stack);
-            if (k < 0)
+            if(k < 0)
             {
                 k = getFirstEmptyStack(inventory);
             }
-
-            if (k < 0)
+			
+            if(k < 0)
             {
                 return j;
             }
@@ -137,12 +206,12 @@ public class InventoryHelper
                     l = oldStack.getMaxStackSize() - oldStack.stackSize;
                 }
 
-                if (l > inventory.getInventoryStackLimit() - oldStack.stackSize)
+                if(l > inventory.getInventoryStackLimit() - oldStack.stackSize)
                 {
                     l = inventory.getInventoryStackLimit() - oldStack.stackSize;
                 }
 
-                if (l == 0)
+                if(l == 0)
                 {
                     return j;
                 }
@@ -161,7 +230,7 @@ public class InventoryHelper
     public static int getFirstEmptyStack(IInventory inventory)
     {
         for(int i = 0; i < inventory.getSizeInventory(); ++i)
-            if (inventory.getStackInSlot(i) == null)
+            if(inventory.getStackInSlot(i) == null)
                 return i;
         
         return -1;

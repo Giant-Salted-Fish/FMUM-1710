@@ -21,7 +21,6 @@ import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.entity.RenderItem;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.World;
 
@@ -66,17 +65,19 @@ public class GuiGunBox extends GuiContainer
 	protected void drawGuiContainerForegroundLayer(int x, int y)
 	{
 		GunBoxEntry[] entries = currentPage.gunList;
-
+		
 		//Draw titles
 		fontRendererObj.drawString(type.name, 7, 6, hexColor(type.gunBoxTextColor));
 		fontRendererObj.drawStringWithShadow(currentPage.pageName, (29 + 33) - (fontRendererObj.getStringWidth(currentPage.pageName) / 2), 26, hexColor(type.pageTextColor));
-
+		
 		//List gun item entries
+		ItemStack gunStack;
 		for(int i = 0; i < entries.length && i < 8; i++)
 		{
 			if(entries[i] != null)
 			{
-				String label = entries[i].type.name;
+				gunStack = new ItemStack(entries[i].type.getItem());
+				String label = gunStack.getDisplayName();
 
 				//Truncate if name is greater than the boundary
 				if(fontRendererObj.getStringWidth(label) > 97)
@@ -85,7 +86,7 @@ public class GuiGunBox extends GuiContainer
 				fontRendererObj.drawString(label, 19, 46 + (i * 12), hexColor(type.itemListTextColor));
 			}
 		}
-
+		
 		//If a weapon has been selected from the list
 		if(selectedItem != -1)
 		{
@@ -97,7 +98,7 @@ public class GuiGunBox extends GuiContainer
 				for(int i = 0; i < entry.ammoEntryList.size(); i++)
 					drawSlotInventory(new ItemStack(entry.ammoEntryList.get(i).type.getItem()), 155 + (i * 22), 26);
 			}
-
+			
 			if(!tabToAmmo)
 			{
 				fontRendererObj.drawString(entry.type.name, 127, 52, hexColor(type.itemTextColor));
@@ -108,15 +109,14 @@ public class GuiGunBox extends GuiContainer
 				fontRendererObj.drawString(entry.ammoEntryList.get(selectedAmmoitem).type.name, 127, 52, hexColor(type.itemTextColor));
 				drawRecipe(entry.ammoEntryList.get(selectedAmmoitem).requiredParts);
 			}
-
+			
 			//Draw bootleg craft button text
 			if(craftHighlight)
 				fontRendererObj.drawStringWithShadow("Craft", (126 + 32) - (fontRendererObj.getStringWidth("Craft") / 2), 117, hexColor(type.buttonTextHoverColor));
 			else
 				fontRendererObj.drawStringWithShadow("Craft", (126 + 32) - (fontRendererObj.getStringWidth("Craft") / 2), 117, hexColor(type.buttonTextColor));
-
 		}
-
+		
 		//Draw bootleg page button text
 		if(nextHighlight)
 			fontRendererObj.drawStringWithShadow(">", (97 + 10) - (fontRendererObj.getStringWidth(">") / 2), 26, hexColor(type.buttonTextHoverColor));
@@ -127,7 +127,7 @@ public class GuiGunBox extends GuiContainer
 			fontRendererObj.drawStringWithShadow("<", (7 + 10) - (fontRendererObj.getStringWidth("<") / 2), 26, hexColor(type.buttonTextHoverColor));
 		else
 			fontRendererObj.drawStringWithShadow("<", (7 + 10) - (fontRendererObj.getStringWidth("<") / 2), 26, hexColor(type.buttonTextColor));
-
+		
 		//Draw tooltips
 		if(recipeTooltip != null)
 			drawHoveringText(Collections.singletonList(recipeTooltip), mouseX - guiLeft, mouseY - guiTop, fontRendererObj);
@@ -270,19 +270,16 @@ public class GuiGunBox extends GuiContainer
 				if(entry.type instanceof GunType)
 				{
 					List<String> lines = new ArrayList<String>();
-					GunType gunType = (GunType) entry.type;
+					ItemStack gunStack = new ItemStack(entry.type.getItem());
+					lines.add(gunStack.getDisplayName());
+					/*GunType gunType = (GunType)entry.type;
 					lines.add(gunType.name);
 					lines.add("\u00a79Damage" + "\u00a77: " + gunType.damage);
 					lines.add("\u00a79Recoil" + "\u00a77: " + gunType.recoilPitch);
 					lines.add("\u00a79Spread" + "\u00a77: " + gunType.bulletSpread);
 					lines.add("\u00a79Reload" + "\u00a77: " + (gunType.reloadTime / 20) + "s");
-					if(gunType.shootDelay != 0)
-					{
-						lines.add("\u00a79RPM" + "\u00a77: " + (1200 / gunType.shootDelay) + "rpm");
-					}
-					else
-						lines.add("\u00a79RPM" + "\u00a77: " + (gunType.roundsPerMin) + "rpm");
-					lines.add("\u00a79Mode(s)" + "\u00a77: " + gunType.mode);
+					lines.add("\u00a79RPM" + "\u00a77: " + (1200F / gunType.shootDelay) + "rpm");
+					lines.add("\u00a79Mode(s)" + "\u00a77: " + gunType.mode);*/
 					gunStats = lines;
 				}
 			}

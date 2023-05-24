@@ -1,0 +1,17 @@
+﻿// Naming
+Name CIC WTS-36C
+ShortName CICWTS36C
+
+// Visual
+Icon CICWTS36C
+Model oc.ModelOCGun:CICWTS36LowerReceiver skins/CICWTS36C.png 0.1
+
+// Ammo
+ItsType gun
+Mag 556x45mmmag
+
+// Attributes //
+AimCenter 64
+Mode safe semiauto fullauto
+AttachableSlots -43 43 C[ CICWTS36BarrelExtension ] | -104 50 C[ CICWTS36UpperReceiver ] | -107 43 C[ CICWTS36ReceiverEndPlate ] | -11.5 30 0 180 C[ CICWTS36PistolGrip ARPistolGrip ]
+DefaultAttachments CICWTS36BarrelExtension [ CICWTS3620Barrel [ 556mmThreadProtector | CICWTS36GasBlock [ | CICWTS36Piston ] ] ] | CICWTS36UpperReceiver [ CICWTS36UpperPicatinnyRail [ CICIS4FrontSight 27 + CICIS4RearSight 2 ] | CICWTS36MK2Handguard [ CICWTS36MK2HandguardShell [ CICWTS36MKHandguardShellEPR [ RVGGrip 6 ] ] ] | CICWTS36ChargeHandle | CICWTS36Bolt ] | CICWTS36ReceiverEndPlate [ CICWTS36StockButtPad ] | CICWTS36PistolGrip

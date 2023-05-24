@@ -1,5 +1,11 @@
 package com.flansmod.common.guns;
 
+import com.flansmod.common.FlansMod;
+import com.flansmod.common.PlayerHandler;
+import com.flansmod.common.network.PacketKillMessage;
+import com.flansmod.common.teams.Team;
+import com.flansmod.common.types.InfoType;
+
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
@@ -7,14 +13,8 @@ import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.EntityDamageSourceIndirect;
 import net.minecraft.util.IChatComponent;
 
-import com.flansmod.common.FlansMod;
-import com.flansmod.common.PlayerHandler;
-import com.flansmod.common.network.PacketKillMessage;
-import com.flansmod.common.teams.Team;
-import com.flansmod.common.types.InfoType;
-
-public class EntityDamageSourceGun extends EntityDamageSourceIndirect {
-
+public class EntityDamageSourceGun extends EntityDamageSourceIndirect
+{
 	public InfoType weapon;
 	public EntityPlayer shooter;
 	public boolean headshot;

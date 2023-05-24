@@ -1,0 +1,11 @@
+// Naming
+Name H&K416 20" Barrel
+ShortName HK41620Barrel
+Category HK416Barrel
+
+// Visual
+Icon HK416D10RS
+Model oc.ModelOCGun:HK41620Barrel skins/HK416D10RS.png 0.1
+
+// Attributes
+AttachableSlots 100 C[ 556mmMuzzle ] | 49 C[ HK416GasBlock ]

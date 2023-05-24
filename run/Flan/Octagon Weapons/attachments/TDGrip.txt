@@ -1,0 +1,11 @@
+// Naming
+Name TD Grip
+ShortName TDGrip
+Category PRA
+
+// Visual
+Icon HK416D10RS
+Model oc.ModelOCGun:TDGrip skins/Grips.png 0.1
+
+// Attributes
+LeftHandPriority 5

@@ -2,11 +2,10 @@ package com.flansmod.common.guns;
 
 import java.util.ArrayList;
 
-import net.minecraft.client.model.ModelBase;
-import net.minecraft.potion.PotionEffect;
-
 import com.flansmod.common.FlansMod;
 import com.flansmod.common.types.TypeFile;
+
+import net.minecraft.potion.PotionEffect;
 
 public class GrenadeType extends ShootableType
 {
@@ -269,8 +268,10 @@ public class GrenadeType extends ShootableType
 		}
 		catch (Exception e)
 		{
-			System.out.println("Reading grenade file failed.");
-			e.printStackTrace();
+			String line = split[0];
+			for(int i = 1; i < split.length; ++i) line += " " + split[i];
+			FlansMod.log("error > failed to parse key word <" + line + "> for grenade <" + shortName + ">");
+			if(FlansMod.printStackTrace) e.printStackTrace();
 		}
 	}
 
@@ -282,11 +283,5 @@ public class GrenadeType extends ShootableType
 				return grenade;
 		}
 		return null;
-	}
-
-	/** To be overriden by subtypes for model reloading */
-	public void reloadModel()
-	{
-		model = FlansMod.proxy.loadModel(modelString, shortName, ModelBase.class);
 	}
 }

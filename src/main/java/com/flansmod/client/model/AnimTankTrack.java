@@ -2,8 +2,6 @@ package com.flansmod.client.model;
 
 import java.util.ArrayList;
 
-import net.minecraft.item.ItemStack;
-
 import com.flansmod.common.vector.Vector3f;
 
 

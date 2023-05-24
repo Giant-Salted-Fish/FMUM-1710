@@ -3,12 +3,12 @@ package com.flansmod.common.teams;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.flansmod.common.PlayerData;
+
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.Vec3;
-
-import com.flansmod.common.PlayerData;
 
 public class GametypeCTF extends Gametype 
 {

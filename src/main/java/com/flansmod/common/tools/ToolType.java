@@ -3,30 +3,33 @@ package com.flansmod.common.tools;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import net.minecraft.client.model.ModelBase;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
+import com.flansmod.client.model.ModelTest;
+import com.flansmod.common.FlansMod;
+import com.flansmod.common.types.InfoType;
+import com.flansmod.common.types.TypeFile;
+
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.registry.GameRegistry;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
-
-import com.flansmod.common.FlansMod;
-import com.flansmod.common.types.InfoType;
-import com.flansmod.common.types.TypeFile;
+import net.minecraft.client.model.ModelBase;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
 
 public class ToolType extends InfoType 
 {
 	public static HashMap<String, ToolType> tools = new HashMap<String, ToolType>();
 	
-	@SideOnly(value = Side.CLIENT)
 	/** The parachute model */
-	public ModelBase model;
+	@SideOnly(Side.CLIENT)
+	public ModelTest model = null;
+	@SideOnly(Side.CLIENT)
+	public String modelName = null;
 	
 	/** Boolean switches that decide whether the tool should heal players and / or driveables */
 	public boolean healPlayers = false, healDriveables = false;
 	/** The amount to heal per use (one use per click) */
-	public int healAmount = 0;
+	public float healAmount = 0;
 	/** The amount of uses the tool has. 0 means infinite */
 	public int toolLife = 0;
 	/** If true, the tool will destroy itself when finished. Disable this for rechargeable tools */
@@ -42,17 +45,21 @@ public class ToolType extends InfoType
 	/** If > 0, then the player can eat this and recover this much hunger */
 	public int foodness = 0;
 	public boolean key = false;
+	/** if it is a bag */
+	public int bagType = -1;
+	public float bagWeightCapacity = 0F, bagVolumeCapacity = 0F;
 	
 	public ToolType(TypeFile file) 
 	{
 		super(file);
-	}
-	
-	@Override
-	protected void postRead(TypeFile file)
-	{
 		tools.put(shortName, this);
 	}
+
+	@Override
+	protected void preRead(TypeFile file) { }
+	
+	@Override
+	protected void postRead(TypeFile file) { }
 
 	/** Pack reader */
 	@Override
@@ -62,7 +69,7 @@ public class ToolType extends InfoType
 		try
 		{
 			if(FMLCommonHandler.instance().getSide().isClient() && split[0].equals("Model"))
-				model = FlansMod.proxy.loadModel(split[1], shortName, ModelBase.class);
+				model = FlansMod.proxy.loadModel(modelName = split[1], shortName, ModelTest.class);
 			else if(split[0].equals("Texture"))
 				texture = split[1];
 			else if(split[0].equals("Parachute"))
@@ -76,7 +83,7 @@ public class ToolType extends InfoType
 			else if(split[0].equals("Repair") || split[0].equals("RepairVehicles"))
 				healDriveables = Boolean.parseBoolean(split[1].toLowerCase());
 			else if(split[0].equals("HealAmount") || split[0].equals("RepairAmount"))
-				healAmount = Integer.parseInt(split[1]);
+				healAmount = Float.parseFloat(split[1]);
 			else if(split[0].equals("ToolLife") || split[0].equals("ToolUses"))
 				toolLife = Integer.parseInt(split[1]);
 			else if(split[0].equals("EUPerCharge"))
@@ -96,11 +103,21 @@ public class ToolType extends InfoType
 				destroyOnEmpty = Boolean.parseBoolean(split[1].toLowerCase());
 			else if(split[0].equals("Food") || split[0].equals("Foodness"))
 				foodness = Integer.parseInt(split[1]);
+			else if(split[0].equals("Bag"))
+			{
+				bagType = Integer.parseInt(split[1]);
+				if(split.length > 2)
+					bagVolumeCapacity = Float.parseFloat(split[2]);
+				if(split.length > 3)
+					bagWeightCapacity = Float.parseFloat(split[3]);
+			}
 		} 
 		catch (Exception e)
 		{
-			FlansMod.log("Reading file failed : " + shortName);
-			e.printStackTrace();
+			String line = split[0];
+			for(int i = 1; i < split.length; ++i) line += " " + split[i];
+			FlansMod.log("error > failed to parse key word <" + line + "> for tool <" + shortName + ">");
+			if(FlansMod.printStackTrace) e.printStackTrace();
 		}
 	}
 	
@@ -108,34 +125,24 @@ public class ToolType extends InfoType
 	public void addRecipe(Item item)
 	{
 		super.addRecipe(item);
+		
+		if(rechargeRecipe.size() < 1) return;
 		//Add the recharge recipe if there is one
-		if(rechargeRecipe.size() < 1)
-			return;
 		rechargeRecipe.add(new ItemStack(item, 1, toolLife));
 		GameRegistry.addShapelessRecipe(new ItemStack(item, 1, 0), rechargeRecipe.toArray());
 	}
 	
-	public static ToolType getType(String shortName)
-	{
-		return tools.get(shortName);
-	}
+	public static ToolType getType(String shortName) { return tools.get(shortName); }
 
 	@Override
-	protected void preRead(TypeFile file) 
-	{
-		
-	}
-
-	@Override
-	public float GetRecommendedScale() 
-	{
-		return 0.0f;
-	}
+	public float GetRecommendedScale() { return 0F; }
 
 	@Override
 	@SideOnly(Side.CLIENT)
-	public ModelBase GetModel() 
-	{
-		return null;
-	}
+	public ModelBase GetModel() { return model; }
+	
+	@Override
+	@SideOnly(Side.CLIENT)
+	public void reloadModel()
+	{ if(model != null) model = FlansMod.proxy.loadModel(modelName, shortName, ModelTest.class); }
 }

@@ -1,18 +1,13 @@
 package com.flansmod.common.driveables;
 
-import java.util.ArrayList;
-
-import net.minecraft.nbt.NBTTagCompound;
-
-import com.flansmod.common.FlansMod;
 import com.flansmod.common.RotatedAxes;
-import com.flansmod.common.driveables.collisions.CollisionShapeBox;
 import com.flansmod.common.driveables.collisions.CollisionTest;
 import com.flansmod.common.driveables.collisions.RidingEntityPosition;
 import com.flansmod.common.guns.EntityBullet;
 import com.flansmod.common.guns.raytracing.DriveableHit;
-import com.flansmod.common.network.PacketParticle;
 import com.flansmod.common.vector.Vector3f;
+
+import net.minecraft.nbt.NBTTagCompound;
 
 public class DriveablePart 
 {

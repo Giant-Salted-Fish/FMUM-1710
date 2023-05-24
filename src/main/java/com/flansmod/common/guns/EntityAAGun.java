@@ -1,18 +1,5 @@
 package com.flansmod.common.guns;
 
-import io.netty.buffer.ByteBuf;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.monster.EntityMob;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.AxisAlignedBB;
-import net.minecraft.util.DamageSource;
-import net.minecraft.util.MovingObjectPosition;
-import net.minecraft.util.Vec3;
-import net.minecraft.world.World;
-
 import org.lwjgl.input.Mouse;
 
 import com.flansmod.common.FlansMod;
@@ -31,6 +18,18 @@ import cpw.mods.fml.common.network.ByteBufUtils;
 import cpw.mods.fml.common.registry.IEntityAdditionalSpawnData;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
+import io.netty.buffer.ByteBuf;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.monster.EntityMob;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.util.DamageSource;
+import net.minecraft.util.MovingObjectPosition;
+import net.minecraft.util.Vec3;
+import net.minecraft.world.World;
 
 public class EntityAAGun extends Entity implements IEntityAdditionalSpawnData
 {
@@ -610,13 +609,11 @@ public class EntityAAGun extends Entity implements IEntityAdditionalSpawnData
 
 	public int findAmmo(EntityPlayer player)
 	{
-		for (int i = 0; i < player.inventory.getSizeInventory(); i++)
+		for(int i = 0, size = player.inventory.getSizeInventory(); i < size; ++i)
 		{
 			ItemStack stack = player.inventory.getStackInSlot(i);
-			if (type.isAmmo(stack))
-			{
+			if(type.isAmmo(stack))
 				return i;
-			}
 		}
 		return -1;
 	}

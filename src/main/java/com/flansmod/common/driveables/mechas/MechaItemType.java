@@ -2,15 +2,15 @@ package com.flansmod.common.driveables.mechas;
 
 import java.util.ArrayList;
 
-import cpw.mods.fml.common.FMLCommonHandler;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
-import net.minecraft.client.model.ModelBase;
-
 import com.flansmod.client.model.ModelMechaTool;
 import com.flansmod.common.FlansMod;
 import com.flansmod.common.types.InfoType;
 import com.flansmod.common.types.TypeFile;
+
+import cpw.mods.fml.common.FMLCommonHandler;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraft.client.model.ModelBase;
 
 public class MechaItemType extends InfoType 
 {
@@ -55,21 +55,16 @@ public class MechaItemType extends InfoType
 	/** The model */
 	@SideOnly(Side.CLIENT)
 	public ModelMechaTool model;
+	@SideOnly(Side.CLIENT)
+	public String modelName;
 	
-	public MechaItemType(TypeFile file)
-	{
-		super(file);
-	}
+	public MechaItemType(TypeFile file) { super(file); }
 	
 	@Override
-	protected void preRead(TypeFile file) 
-	{		
-	}
+	protected void preRead(TypeFile file) { }
 
 	@Override
-	protected void postRead(TypeFile file) 
-	{		
-	}
+	protected void postRead(TypeFile file) { }
 	
     @Override
 	protected void read(String[] split, TypeFile file)
@@ -78,7 +73,7 @@ public class MechaItemType extends InfoType
 		try
 		{
 			if(FMLCommonHandler.instance().getSide().isClient() && split[0].equals("Model"))
-				model = FlansMod.proxy.loadModel(split[1], shortName, ModelMechaTool.class);
+				model = FlansMod.proxy.loadModel(modelName = split[1], shortName, ModelMechaTool.class);
 			if(split[0].equals("Texture"))
 				texture = split[1];
 			if(split[0].equals("Type"))
@@ -161,11 +156,10 @@ public class MechaItemType extends InfoType
 		return null;
 	}
 	
+	@Override
+	@SideOnly(Side.CLIENT)
 	public void reloadModel()
-	{
-		if(modelString != null)
-			model = FlansMod.proxy.loadModel(modelString, shortName, ModelMechaTool.class);
-	}
+	{ if(model != null) model = FlansMod.proxy.loadModel(modelName, shortName, ModelMechaTool.class); }
 
 	@Override
 	public float GetRecommendedScale() 

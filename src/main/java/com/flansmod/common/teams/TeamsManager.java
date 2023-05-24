@@ -10,6 +10,26 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
+import com.flansmod.common.FlansMod;
+import com.flansmod.common.PlayerData;
+import com.flansmod.common.PlayerHandler;
+import com.flansmod.common.driveables.ItemPlane;
+import com.flansmod.common.driveables.ItemVehicle;
+import com.flansmod.common.guns.GunType;
+import com.flansmod.common.guns.ItemAAGun;
+import com.flansmod.common.guns.ItemBullet;
+import com.flansmod.common.guns.ItemGun;
+import com.flansmod.common.network.PacketBase;
+import com.flansmod.common.network.PacketRoundFinished;
+import com.flansmod.common.network.PacketTeamInfo;
+import com.flansmod.common.network.PacketTeamSelect;
+import com.flansmod.common.network.PacketVoting;
+import com.flansmod.common.types.InfoType;
+
+import cpw.mods.fml.common.FMLCommonHandler;
+import cpw.mods.fml.common.eventhandler.Event;
+import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import cpw.mods.fml.common.gameevent.PlayerEvent;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
@@ -39,29 +59,6 @@ import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent.Action;
 import net.minecraftforge.event.world.ChunkDataEvent;
 import net.minecraftforge.event.world.WorldEvent;
-
-import com.flansmod.common.FlansMod;
-import com.flansmod.common.PlayerData;
-import com.flansmod.common.PlayerHandler;
-import com.flansmod.common.driveables.ItemPlane;
-import com.flansmod.common.driveables.ItemVehicle;
-import com.flansmod.common.guns.GunType;
-import com.flansmod.common.guns.ItemAAGun;
-import com.flansmod.common.guns.ItemBullet;
-import com.flansmod.common.guns.ItemGun;
-import com.flansmod.common.guns.ItemShootable;
-import com.flansmod.common.guns.ShootableType;
-import com.flansmod.common.network.PacketBase;
-import com.flansmod.common.network.PacketRoundFinished;
-import com.flansmod.common.network.PacketTeamInfo;
-import com.flansmod.common.network.PacketTeamSelect;
-import com.flansmod.common.network.PacketVoting;
-import com.flansmod.common.types.InfoType;
-
-import cpw.mods.fml.common.FMLCommonHandler;
-import cpw.mods.fml.common.eventhandler.Event;
-import cpw.mods.fml.common.eventhandler.SubscribeEvent;
-import cpw.mods.fml.common.gameevent.PlayerEvent;
 
 public class TeamsManager
 {
@@ -721,14 +718,10 @@ public class TeamsManager
 			for(EntityItem ammoEntity : event.drops)
 			{
 				ItemStack ammoItemstack = ammoEntity.getEntityItem();
-				if(ammoItemstack != null && ammoItemstack.getItem() instanceof ItemShootable)
+				if(gunType.isValidAmmo(ammoItemstack))
 				{
-					ShootableType bulletType = ((ItemShootable)ammoItemstack.getItem()).type;
-					if(gunType.isAmmo(bulletType, gunEntity.getEntityItem()))
-					{
-						gunEntity.ammoStacks.add(ammoItemstack.copy());
-						ammoItemstack.stackSize = 0;
-					}
+					gunEntity.ammoStacks.add(ammoItemstack.copy());
+					ammoItemstack.stackSize = 0;
 				}
 			}
 		}
@@ -1076,10 +1069,7 @@ public class TeamsManager
 		for(int i = 0; i < player.inventory.getSizeInventory(); i++)
 		{
 			ItemStack stack = player.inventory.getStackInSlot(i);
-			if(stack != null && stack.getItem() instanceof ItemGun)
-			{
-				((ItemGun)stack.getItem()).reload(stack, ((ItemGun)stack.getItem()).type, player.worldObj, player, true, false);
-			}
+			if(stack != null && stack.getItem() instanceof ItemGun) ((ItemGun)stack.getItem()).reload(stack, player.worldObj, player, true);
 		}
 	}
 			
@@ -1329,15 +1319,13 @@ public class TeamsManager
 		objects.add(obj);
 	}
 	
-	public EntityPlayerMP getPlayer(String username)
+	public static List<EntityPlayer> getPlayers()
+	{ return MinecraftServer.getServer().getConfigurationManager().playerEntityList; }
+	
+	public static EntityPlayerMP getPlayer(String username)
 	{
 		return MinecraftServer.getServer().getConfigurationManager().func_152612_a(username);
 	}
-	
-	public static void log(String s)
-	{
-		FlansMod.log("Teams Info : " + s);
-	}	
 	
 	public static void messagePlayer(EntityPlayerMP player, String s)
 	{
@@ -1356,11 +1344,6 @@ public class TeamsManager
 	public static void sendPacketToPlayer(PacketBase packet, EntityPlayerMP player)
 	{
 		FlansMod.getPacketHandler().sendTo(packet, player);
-	}
-	
-	public static List<EntityPlayer> getPlayers()
-	{
-		return MinecraftServer.getServer().getConfigurationManager().playerEntityList;
 	}
 
 	/** Returns the team associated with the given ID */

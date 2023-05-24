@@ -8,21 +8,18 @@ import net.minecraft.util.ResourceLocation;
 
 public class TextureGroup
 {
+	public ArrayList<TexturedPolygon> poly;
+	public String texture;
+	
 	public TextureGroup()
 	{
 		poly = new ArrayList<TexturedPolygon>();
 		texture = "";
 	}
 	
-	public void addPoly(TexturedPolygon polygon)
-	{
-		poly.add(polygon);
-	}
+	public void addPoly(TexturedPolygon polygon) { poly.add(polygon); }
 
-	public void loadTexture()
-	{
-		loadTexture(-1);
-	}
+	public void loadTexture() { loadTexture(-1); }
 	
 	public void loadTexture(int defaultTexture)
 	{
@@ -31,12 +28,6 @@ public class TextureGroup
 			TextureManager renderengine = RenderManager.instance.renderEngine;
 			renderengine.bindTexture(new ResourceLocation("", texture)); //TODO : Check. Not sure about this one
 		}
-		else if(defaultTexture > -1)
-		{
-			RenderManager.instance.renderEngine.bindTexture(new ResourceLocation("", ""));
-		}
+		else if(defaultTexture >= 0) RenderManager.instance.renderEngine.bindTexture(new ResourceLocation("", ""));
 	}
-	
-	public ArrayList<TexturedPolygon> poly;
-	public String texture;
 }

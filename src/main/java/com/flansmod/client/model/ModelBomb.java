@@ -1,9 +1,9 @@
 package com.flansmod.client.model;
 
+import com.flansmod.client.tmt.ModelRendererTurbo;
+
 import net.minecraft.client.model.ModelBase;
 import net.minecraft.entity.Entity;
-
-import com.flansmod.client.tmt.ModelRendererTurbo;
 
 public class ModelBomb extends ModelBase
 {

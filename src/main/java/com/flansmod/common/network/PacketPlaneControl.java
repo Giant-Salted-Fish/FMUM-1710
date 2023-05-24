@@ -1,15 +1,10 @@
 package com.flansmod.common.network;
 
-import net.minecraft.entity.player.EntityPlayer;
-import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandlerContext;
-
 import com.flansmod.common.driveables.EntityDriveable;
 import com.flansmod.common.driveables.EntityPlane;
-import com.flansmod.common.vector.Vector3f;
 
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandlerContext;
 
 public class PacketPlaneControl extends PacketDriveableControl 
 {

@@ -2,18 +2,18 @@ package com.flansmod.common.network;
 
 import java.util.Random;
 
+import com.flansmod.client.FlansModClient;
+import com.flansmod.common.FlansMod;
+
+import cpw.mods.fml.client.FMLClientHandler;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import net.minecraft.client.particle.EntityFX;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.world.World;
-import cpw.mods.fml.client.FMLClientHandler;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
-
-import com.flansmod.client.FlansModClient;
-import com.flansmod.common.FlansMod;
 
 public class PacketFlak extends PacketBase 
 {

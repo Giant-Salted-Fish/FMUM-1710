@@ -4,10 +4,11 @@ import java.util.ArrayList;
 
 import com.flansmod.client.model.ModelVehicle;
 import com.flansmod.common.FlansMod;
-import com.flansmod.common.driveables.DriveableType.ParticleEmitter;
 import com.flansmod.common.types.TypeFile;
 import com.flansmod.common.vector.Vector3f;
-import com.flansmod.common.vector.Vector3i;
+
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 
 public class VehicleType extends DriveableType
 {
@@ -192,8 +193,8 @@ public class VehicleType extends DriveableType
 	}
 
 	/** To be overriden by subtypes for model reloading */
+	@Override
+	@SideOnly(Side.CLIENT)
 	public void reloadModel()
-	{
-		model = FlansMod.proxy.loadModel(modelString, shortName, ModelVehicle.class);
-	}
+	{ if(model != null) model = FlansMod.proxy.loadModel(modelName, shortName, ModelVehicle.class); }
 }

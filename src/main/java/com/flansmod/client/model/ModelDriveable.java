@@ -2,15 +2,11 @@ package com.flansmod.client.model;
 
 import java.util.HashMap;
 
-import org.lwjgl.opengl.GL11;
-
-import net.minecraft.client.model.ModelBase;
-import net.minecraft.client.renderer.OpenGlHelper;
-
 import com.flansmod.client.tmt.ModelRendererTurbo;
 import com.flansmod.common.driveables.DriveableType;
 import com.flansmod.common.driveables.EntityDriveable;
-import com.flansmod.common.vector.Vector3f;
+
+import net.minecraft.client.model.ModelBase;
 
 public class ModelDriveable extends ModelBase 
 {

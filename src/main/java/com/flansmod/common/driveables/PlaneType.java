@@ -2,13 +2,15 @@ package com.flansmod.common.driveables;
 
 import java.util.ArrayList;
 
-import net.minecraft.item.ItemStack;
-
 import com.flansmod.client.model.ModelPlane;
 import com.flansmod.common.FlansMod;
 import com.flansmod.common.parts.PartType;
 import com.flansmod.common.types.TypeFile;
 import com.flansmod.common.vector.Vector3f;
+
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraft.item.ItemStack;
 
 public class PlaneType extends DriveableType
 {
@@ -334,8 +336,8 @@ public class PlaneType extends DriveableType
 	}
 	
 	/** To be overriden by subtypes for model reloading */
+	@Override
+	@SideOnly(Side.CLIENT)
 	public void reloadModel()
-	{
-		model = FlansMod.proxy.loadModel(modelString, shortName, ModelPlane.class);
-	}
+	{ if(model != null) model = FlansMod.proxy.loadModel(modelName, shortName, ModelPlane.class); }
 }

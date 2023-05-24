@@ -1,0 +1,10 @@
+// Naming
+Name CIC WTS-36 Charge Handle
+ShortName CICWTS36ChargeHandle
+Category CICWTS36ChargeHandle
+
+// Visual
+Icon CICWTS36C
+Model oc.ModelOCGun:CICWTS36ChargeHandle skins/CICWTS36C.png 0.1
+
+// Attributes

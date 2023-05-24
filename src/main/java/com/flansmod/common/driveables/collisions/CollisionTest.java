@@ -1,7 +1,5 @@
 package com.flansmod.common.driveables.collisions;
 
-import net.minecraft.util.MathHelper;
-
 import com.flansmod.common.driveables.EnumDriveablePart;
 import com.flansmod.common.vector.Vector3f;
 

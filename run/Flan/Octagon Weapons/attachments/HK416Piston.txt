@@ -1,0 +1,10 @@
+// Naming
+Name H&K416 Piston
+ShortName HK416Piston
+Category HK416Piston
+
+// Visual
+Icon HK416D10RS
+Model oc.ModelOCGun:HK416Piston skins/HK416D10RS.png 0.1
+
+// Attributes

@@ -1,0 +1,11 @@
+// Naming
+Name RVG Grip
+ShortName RVGGrip
+Category PRA
+
+// Visual
+Icon HK416D10RS
+Model oc.ModelOCGun:RVGGrip skins/Grips.png 0.1
+
+// Attributes
+LeftHandPriority 5
