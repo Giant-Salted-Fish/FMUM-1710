@@ -221,7 +221,7 @@ public class PlayerHitbox
 				}
 			}
 			// Come to here means this bullet has penetrated all the armors, apply player damage here
-			if(player.attackEntityFrom(damagesource, 1F/* MARK: hitDamage */))
+			if(player.attackEntityFrom(damagesource, hitDamage))
 			{
 				// If the attack was allowed, we should remove their immortality cooldown so we can shoot them again. Without this, any rapid fire gun become useless
 				++player.arrowHitTimer;
